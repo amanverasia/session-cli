@@ -83,6 +83,70 @@ session-cli search "keyword"
 session-cli media 05abc123... --output ./downloads
 ```
 
+### Export Conversations
+
+Export a single conversation to JSON:
+
+```bash
+session-cli export 05abc123... --format json --output convo.json
+```
+
+Export to CSV format:
+
+```bash
+session-cli export 05abc123... --format csv --output convo.csv
+```
+
+Export to HTML (with embedded images):
+
+```bash
+session-cli export 05abc123... --format html --output convo.html --include-attachments
+```
+
+Export all conversations at once:
+
+```bash
+session-cli export-all --format json --output ./exports
+session-cli export-all --format html --output ./exports --include-attachments
+```
+
+### Backup and Restore
+
+Create a full backup (unencrypted):
+
+```bash
+session-cli backup --output ./backups/session-backup
+```
+
+Create an encrypted backup:
+
+```bash
+session-cli backup --output ./backups/session-backup --encrypt
+# Will prompt for password
+```
+
+Create backup with attachments:
+
+```bash
+session-cli backup --output ./backups/session-backup --include-attachments
+```
+
+Restore from backup:
+
+```bash
+session-cli restore ./backups/session-backup-20260130_123456
+session-cli restore ./backups/session-backup-20260130.enc --password mypassword
+```
+
+**Backup Format:**
+```
+session-backup-20260130_123456/
+├── db.sqlite                 # Session database
+├── attachments/              # Encrypted attachments (optional)
+├── metadata.json             # Backup information
+└── checksum.txt              # File integrity checksums
+```
+
 ## CLI Commands
 
 | Command | Description |
@@ -93,6 +157,10 @@ session-cli media 05abc123... --output ./downloads
 | `watch` | Watch for new messages |
 | `search <query>` | Search messages |
 | `media <id>` | Download media from conversation |
+| `export <id>` | Export a conversation to file |
+| `export-all` | Export all conversations to directory |
+| `backup` | Create a full backup of Session data |
+| `restore` | Restore from backup |
 | `info` | Show Session information |
 
 ## Python API
@@ -116,6 +184,27 @@ with SessionDatabase() as db:
     
     # Decrypt attachment
     decrypted = db.decrypt_attachment("ab/cd/abcd1234...")
+
+    # Export conversation to JSON
+    db.export_conversation_to_json(convo.id, "convo.json")
+
+    # Export to HTML with embedded images
+    db.export_conversation_to_html(convo.id, "convo.html", include_attachments=True)
+
+    # Export all conversations
+    db.export_all_conversations("./exports", format="html")
+
+    # Create backup
+    db.create_backup("./backups", include_attachments=True)
+
+    # Create encrypted backup
+    db.create_backup("./backups", include_attachments=True, backup_password="secret")
+
+    # Create incremental backup
+    db.create_incremental_backup("./backups", since_timestamp=1640000000000)
+
+    # Restore from backup
+    db.restore_from_backup("./backups/session-backup-20260130")
 ```
 
 ### CDP Mode (Full Control)

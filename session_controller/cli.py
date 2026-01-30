@@ -359,6 +359,98 @@ def cmd_info(args):
         print(f"    Start with: {SessionCDP.get_launch_command(args.port)}")
 
 
+def cmd_export(args):
+    """Export a conversation to file."""
+    config = SessionConfig(profile=args.profile)
+    with SessionDatabase(config) as db:
+        try:
+            if args.format == "json":
+                db.export_conversation_to_json(
+                    args.id,
+                    args.output,
+                    include_attachments=args.include_attachments,
+                    attachment_output_dir=args.attachments_dir,
+                )
+            elif args.format == "csv":
+                db.export_conversation_to_csv(args.id, args.output)
+            elif args.format == "html":
+                db.export_conversation_to_html(
+                    args.id, args.output, include_attachments=args.include_attachments
+                )
+
+            print(f"✓ Exported to {args.output}")
+        except Exception as e:
+            print(f"✗ Export failed: {e}")
+            return 1
+
+
+def cmd_export_all(args):
+    """Export all conversations."""
+    config = SessionConfig(profile=args.profile)
+    with SessionDatabase(config) as db:
+        try:
+            db.export_all_conversations(
+                args.output,
+                format=args.format,
+                include_attachments=args.include_attachments,
+                attachment_output_dir=args.attachments_dir,
+            )
+            print(f"✓ Exported all conversations to {args.output}")
+        except Exception as e:
+            print(f"✗ Export failed: {e}")
+            return 1
+
+
+def cmd_backup(args):
+    """Create a backup."""
+    config = SessionConfig(profile=args.profile)
+    with SessionDatabase(config) as db:
+        try:
+            import getpass
+
+            backup_password = None
+            if args.encrypt:
+                backup_password = getpass.getpass(
+                    "Backup password (leave empty for no encryption): "
+                )
+                if backup_password == "":
+                    backup_password = None
+
+            result = db.create_backup(
+                args.output,
+                include_attachments=args.include_attachments,
+                backup_password=backup_password,
+            )
+
+            print(f"✓ Backup created successfully!")
+            print(f"  Location: {result['backup_path']}")
+            print(f"  Encrypted: {result.get('is_encrypted', False)}")
+            print(f"  Conversations: {result.get('conversation_count', 0)}")
+            print(f"  Includes attachments: {result['includes_attachments']}")
+        except Exception as e:
+            print(f"✗ Backup failed: {e}")
+            return 1
+
+
+def cmd_restore(args):
+    """Restore from backup."""
+    config = SessionConfig(profile=args.profile)
+    with SessionDatabase(config) as db:
+        try:
+            import getpass
+
+            backup_password = None
+            if args.password:
+                backup_password = args.password
+            elif args.encrypt:
+                backup_password = getpass.getpass("Backup password: ")
+
+            db.restore_from_backup(args.backup_path, backup_password)
+        except Exception as e:
+            print(f"✗ Restore failed: {e}")
+            return 1
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Session Desktop Controller",
@@ -370,6 +462,8 @@ Examples:
   session-cli send 05abc123... "Hello!"     # Send message
   session-cli watch                         # Watch for new messages
   session-cli search "keyword"              # Search messages
+  session-cli export 05abc... -o convo.json  # Export conversation
+  session-cli backup -o ./backups           # Create backup
         """,
     )
     parser.add_argument(
@@ -439,6 +533,75 @@ Examples:
         "--limit", "-n", type=int, default=100, help="Max messages to scan"
     )
     media_parser.set_defaults(func=cmd_media)
+
+    # export
+    export_parser = subparsers.add_parser("export", help="Export a conversation")
+    export_parser.add_argument("id", help="Conversation ID or name")
+    export_parser.add_argument(
+        "--format",
+        "-f",
+        default="json",
+        choices=["json", "csv", "html"],
+        help="Export format",
+    )
+    export_parser.add_argument("--output", "-o", required=True, help="Output file")
+    export_parser.add_argument(
+        "--include-attachments",
+        "-a",
+        action="store_true",
+        help="Include/download attachments",
+    )
+    export_parser.add_argument("--attachments-dir", help="Directory for attachments")
+    export_parser.set_defaults(func=cmd_export)
+
+    # export-all
+    export_all_parser = subparsers.add_parser(
+        "export-all", help="Export all conversations"
+    )
+    export_all_parser.add_argument(
+        "--format",
+        "-f",
+        default="json",
+        choices=["json", "csv", "html"],
+        help="Export format",
+    )
+    export_all_parser.add_argument(
+        "--output", "-o", required=True, help="Output directory"
+    )
+    export_all_parser.add_argument(
+        "--include-attachments",
+        "-a",
+        action="store_true",
+        help="Include/download attachments",
+    )
+    export_all_parser.add_argument(
+        "--attachments-dir", help="Directory for attachments"
+    )
+    export_all_parser.set_defaults(func=cmd_export_all)
+
+    # backup
+    backup_parser = subparsers.add_parser("backup", help="Create a backup")
+    backup_parser.add_argument("--output", "-o", required=True, help="Backup directory")
+    backup_parser.add_argument(
+        "--include-attachments",
+        "-a",
+        action="store_true",
+        help="Include attachments in backup",
+    )
+    backup_parser.add_argument(
+        "--encrypt", "-e", action="store_true", help="Encrypt backup with password"
+    )
+    backup_parser.set_defaults(func=cmd_backup)
+
+    # restore
+    restore_parser = subparsers.add_parser("restore", help="Restore from backup")
+    restore_parser.add_argument(
+        "backup_path", help="Path to backup directory or .enc file"
+    )
+    restore_parser.add_argument(
+        "--password", "-p", help="Backup password (if encrypted)"
+    )
+    restore_parser.set_defaults(func=cmd_restore)
 
     # info
     info_parser = subparsers.add_parser("info", help="Show Session info")

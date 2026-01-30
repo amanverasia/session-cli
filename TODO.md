@@ -29,8 +29,8 @@ This document tracks planned features, improvements, and known issues.
 
 ### Features
 - [ ] Implement `cdp.py:send_attachment()` method
-- [ ] Add message export functionality (JSON, CSV, HTML)
-- [ ] Add conversation export with messages
+- [x] Add message export functionality (JSON, CSV, HTML) - COMPLETED
+- [x] Add conversation export with messages - COMPLETED
 - [ ] Add batch operations (mark all as read, delete messages)
 - [ ] Add message reaction support
 - [ ] Add group management via CDP
@@ -39,6 +39,19 @@ This document tracks planned features, improvements, and known issues.
 - [ ] Add message deletion support
 - [ ] Add contact management (add, remove, block)
 - [ ] Add profile management via CLI
+- [ ] Backup and restore Session data (full and incremental) - COMPLETED
+- [ ] Statistics and analytics dashboard
+- [ ] Enhanced search with filters (date range, sender, attachments)
+- [ ] Message filtering by type (text, attachment, quote)
+- [ ] Configuration file support (`~/.session-cli/config.yaml`)
+- [ ] Webhook integration for automation
+- [ ] Auto-reply bot framework
+- [ ] Interactive REPL mode
+- [ ] Contact management via CDP
+- [ ] Group management via CDP
+- [ ] Message thread view
+- [ ] Message templates
+- [ ] Scheduled message sending
 
 ### CLI Improvements
 - [ ] Add `--version` flag
@@ -48,7 +61,7 @@ This document tracks planned features, improvements, and known issues.
 - [ ] Add progress bars for long operations
 - [ ] Add `--quiet` flag for automation
 - [ ] Add fuzzy search for conversation IDs
-- [ ] Add `--format` option (table, json, csv)
+- [x] Add `--format` option (table, json, csv) - COMPLETED (export formats)
 - [ ] Add pagination for message listing
 
 ## Low Priority
@@ -143,6 +156,17 @@ This document tracks planned features, improvements, and known issues.
 - [x] Basic documentation
 - [x] Setup and packaging
 - [x] MIT License
+
+### v1.1.0 (Export & Backup)
+- [x] Export conversations to JSON format
+- [x] Export conversations to CSV format
+- [x] Export conversations to HTML format with embedded images
+- [x] Export all conversations at once
+- [x] Full backup with optional encryption
+- [x] Incremental backup support
+- [x] Restore from backup
+- [x] Include attachments in exports
+- [x] Added pyaes dependency for backup encryption
 
 ### Repository Setup
 - [x] Create README.md

@@ -35,6 +35,7 @@ setup(
         "sqlcipher3>=0.5.0",
         "pynacl>=1.5.0",
         "websocket-client>=1.0.0",
+        "pyaes>=1.6.0",
     ],
     extras_require={
         "dev": [

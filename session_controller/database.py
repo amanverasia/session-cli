@@ -696,10 +696,20 @@ class SessionDatabase:
         }
         .quote {
             border-left: 3px solid rgba(0,0,0,0.2);
-            padding-left: 10px;
-            margin-bottom: 8px;
-            opacity: 0.8;
-            font-style: italic;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .quote-sender {
+            font-size: 11px;
+            color: rgba(0,0,0,0.5);
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+        .quote-text {
+            color: rgba(0,0,0,0.7);
         }
     </style>
 </head>
@@ -729,8 +739,15 @@ class SessionDatabase:
             <div class="bubble">""")
 
             if msg.quote:
+                quote_sender = (
+                    msg.quote.get("author") or msg.quote.get("sender") or "Unknown"
+                )
+                quote_text = self._escape_html(msg.quote.get("text", ""))
                 html_content.append(f"""
-                <div class="quote">{msg.quote.get("text", "")}</div>""")
+                <div class="quote">
+                    <div class="quote-sender">{quote_sender}</div>
+                    <div class="quote-text">{quote_text}</div>
+                </div>""")
 
             if msg.body:
                 html_content.append(f"""

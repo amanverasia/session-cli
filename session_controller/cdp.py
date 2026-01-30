@@ -64,7 +64,7 @@ class SessionCDP:
 
         raise ConnectionError("No debuggable pages found")
 
-    def connect(self):
+    def connect(self) -> None:
         """Connect to Session via WebSocket."""
         try:
             import websocket
@@ -77,17 +77,17 @@ class SessionCDP:
         self._ws = websocket.create_connection(ws_url)
         self._message_id = 0
 
-    def close(self):
+    def close(self) -> None:
         """Close the WebSocket connection."""
         if self._ws:
             self._ws.close()
             self._ws = None
 
-    def __enter__(self):
+    def __enter__(self) -> "SessionCDP":
         self.connect()
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.close()
 
     def _send_command(self, method: str, params: Optional[dict] = None) -> dict:

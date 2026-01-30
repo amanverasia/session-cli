@@ -23,6 +23,7 @@ import os
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 try:
     from .config import SessionConfig
@@ -52,7 +53,7 @@ except ImportError:
     from .cdp import SessionCDP
 
 
-def get_version():
+def get_version() -> str:
     """Get version from package or file."""
     try:
         from session_controller import __version__
@@ -101,7 +102,7 @@ def _connect_cdp(port: int) -> SessionCDP:
         sys.exit(1)
 
 
-def cmd_list(args):
+def cmd_list(args) -> Optional[int]:
     """List all conversations."""
     config = SessionConfig(profile=args.profile)
     with SessionDatabase(config) as db:

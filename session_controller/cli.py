@@ -24,6 +24,17 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+try:
+    from .config import SessionConfig
+    from .cdp import SessionCDP
+    from .database import SessionDatabase
+    from .exceptions import CDPError, SessionError
+except ImportError:
+    from config import SessionConfig
+    from cdp import SessionCDP
+    from database import SessionDatabase
+    from exceptions import CDPError, SessionError
+
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
@@ -76,12 +87,17 @@ def _connect_cdp(port: int) -> SessionCDP:
         cdp = SessionCDP(port=port)
         cdp.connect()
         return cdp
-    except Exception as e:
-        logger.error(f"Cannot connect to Session CDP at port {port}")
+    except CDPError as e:
+        logger.error(f"CDP connection failed: {e}")
         logger.error(
             f"Make sure Session is running with: {SessionCDP.get_launch_command(port)}"
         )
-        logger.debug(f"Details: {e}")
+        sys.exit(1)
+    except SessionError as e:
+        logger.error(f"Session error: {e}")
+        sys.exit(1)
+    except Exception as e:
+        logger.error(f"Unexpected error connecting to Session CDP: {e}")
         sys.exit(1)
 
 

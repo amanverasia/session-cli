@@ -7,7 +7,7 @@ long_description = (this_directory / "README.md").read_text(encoding="utf-8")
 
 setup(
     name="session-controller",
-    version="1.2.0",
+    version="1.3.0",
     description="Python CLI tool and library for programmatic control of Session Desktop",
     long_description=long_description,
     long_description_content_type="text/markdown",

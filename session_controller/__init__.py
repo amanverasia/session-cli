@@ -27,11 +27,11 @@ CLI Usage:
 For more information, see: https://github.com/amanverasia/session-cli
 """
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 __author__ = "Session Controller Contributors"
 __license__ = "MIT"
 
-from .database import SessionDatabase, Message, Conversation
+from .database import SessionDatabase, Message, Conversation, Request
 from .cdp import SessionCDP
 from .config import SessionConfig
 
@@ -41,4 +41,5 @@ __all__ = [
     "SessionConfig",
     "Message",
     "Conversation",
+    "Request",
 ]

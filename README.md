@@ -50,7 +50,7 @@ session-cli messages "friend name" --limit 10
 First, start Session with remote debugging enabled:
 
 ```bash
-/Applications/Session.app/Contents/MacOS/Session --remote-debugging-port=9222
+/Applications/Session.app/Contents/MacOS/Session --remote-debugging-port=9222 --remote-allow-origins=*
 ```
 
 Then send a message:
@@ -374,21 +374,21 @@ session-cli --profile devprod1 send 05abc... "Hello"
 
 ## CDP Setup
 
-To use CDP features (sending messages), Session must be started with remote debugging:
+To use CDP features (sending messages), Session must be started with remote debugging enabled. The `--remote-allow-origins=*` flag is required for WebSocket connections.
 
 ### macOS
 ```bash
-/Applications/Session.app/Contents/MacOS/Session --remote-debugging-port=9222
+/Applications/Session.app/Contents/MacOS/Session --remote-debugging-port=9222 --remote-allow-origins=*
 ```
 
 ### Linux
 ```bash
-session-desktop --remote-debugging-port=9222
+session-desktop --remote-debugging-port=9222 --remote-allow-origins=*
 ```
 
 ### Start in Background (with tray)
 ```bash
-/Applications/Session.app/Contents/MacOS/Session --remote-debugging-port=9222 --start-in-tray
+/Applications/Session.app/Contents/MacOS/Session --remote-debugging-port=9222 --remote-allow-origins=* --start-in-tray
 ```
 
 ## Database Access

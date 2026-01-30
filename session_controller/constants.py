@@ -10,7 +10,79 @@ from typing import Final
 
 # === Version Info ===
 PACKAGE_NAME: Final = "session-controller"
-VERSION: Final = "1.3.1"
+VERSION: Final = "1.3.2"
+
+
+# === SQL Queries ===
+class SQLQueries:
+    """SQL query constants for database operations."""
+
+    # Connection checks
+    CHECK_TABLE_EXISTS = "SELECT count(*) FROM sqlite_master"
+
+    # Requests
+    GET_PENDING_REQUESTS = """
+        SELECT id, type, active_at, displayNameInProfile, nickname,
+               lastMessage, unreadCount, isApproved, didApproveMe,
+               avatarInProfile
+        FROM conversations
+        WHERE (isApproved = 0 OR isApproved IS NULL)
+        AND active_at > 0
+        ORDER BY active_at DESC
+    """
+
+    # Conversations
+    GET_CONVERSATIONS = """
+        SELECT id, type, active_at, displayNameInProfile, nickname,
+               lastMessage, unreadCount, isApproved, didApproveMe,
+               avatarInProfile
+        FROM conversations
+        WHERE active_at > 0
+        ORDER BY active_at DESC
+    """
+
+    # Messages
+    GET_MESSAGES_BY_CONVERSATION = """
+        SELECT json FROM messages
+        WHERE conversationId = ?
+        ORDER BY sent_at DESC
+        LIMIT ?
+    """
+
+    GET_MESSAGE_BY_ID = "SELECT json FROM messages WHERE id = ?"
+
+    SEARCH_MESSAGES = """
+        SELECT m.json FROM messages m
+        WHERE m.conversationId = ?
+        AND m.rowid IN (SELECT rowid FROM messages_fts WHERE messages_fts MATCH ?)
+        ORDER BY m.sent_at DESC
+        LIMIT ?
+    """
+
+    SEARCH_MESSAGES_ALL = """
+        SELECT m.json FROM messages m
+        WHERE m.rowid IN (SELECT rowid FROM messages_fts WHERE messages_fts MATCH ?)
+        ORDER BY m.sent_at DESC
+        LIMIT ?
+    """
+
+    GET_SOURCE_FROM_MESSAGES = """
+        SELECT source
+        FROM messages
+        WHERE conversationId = ?
+        AND source IS NOT NULL
+        LIMIT 1
+    """
+
+    GET_CONVERSATION_ID_BY_DISPLAY_NAME = """
+        SELECT id
+        FROM conversations
+        WHERE displayNameInProfile = ?
+        OR nickname = ?
+    """
+
+    # Settings
+    GET_SETTING = "SELECT json FROM items WHERE id = ?"
 
 
 # === CDP Configuration ===

@@ -17,11 +17,15 @@ Usage:
 
 import argparse
 import json
+import logging
 import sys
 import os
 import time
 from datetime import datetime
 from pathlib import Path
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
 
 # Add parent to path if running directly
 if __name__ == "__main__":
@@ -73,11 +77,11 @@ def _connect_cdp(port: int) -> SessionCDP:
         cdp.connect()
         return cdp
     except Exception as e:
-        print(f"Error: Cannot connect to Session CDP at port {port}")
-        print(
+        logger.error(f"Cannot connect to Session CDP at port {port}")
+        logger.error(
             f"Make sure Session is running with: {SessionCDP.get_launch_command(port)}"
         )
-        print(f"\nDetails: {e}")
+        logger.debug(f"Details: {e}")
         sys.exit(1)
 
 

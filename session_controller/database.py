@@ -6,6 +6,7 @@ Install: pip install sqlcipher3
 """
 
 import json
+import logging
 from pathlib import Path
 from typing import Optional, Iterator, Any
 from dataclasses import dataclass
@@ -13,8 +14,12 @@ from datetime import datetime
 
 try:
     from .config import SessionConfig
+    from .constants import SQLQueries
 except ImportError:
     from config import SessionConfig
+    from constants import SQLQueries
+
+logger = logging.getLogger(__name__)
 
 # Try different sqlcipher packages
 try:
@@ -190,7 +195,7 @@ class SessionDatabase:
 
         # Verify we can read the database
         try:
-            self._conn.execute("SELECT count(*) FROM sqlite_master").fetchone()
+            self._conn.execute(SQLQueries.CHECK_TABLE_EXISTS).fetchone()
         except Exception as e:
             self._conn.close()
             self._conn = None
@@ -1019,6 +1024,7 @@ class SessionDatabase:
             include_attachments: Embed images as base64
         """
         from datetime import datetime
+        from importlib import resources
 
         convo = self.get_conversation(conversation_id)
         if not convo:
@@ -1026,144 +1032,26 @@ class SessionDatabase:
 
         messages = self.get_messages(conversation_id, limit=10000)
 
-        html_content = []
-        html_content.append(
-            """<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>"""
-            + f"{convo.name} - Session Export"
-            + """</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f0f0f0;
-            padding: 20px;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .message {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 15px;
-        }
-        .message.outgoing {
-            align-items: flex-end;
-        }
-        .message.incoming {
-            align-items: flex-start;
-        }
-        .bubble {
-            max-width: 70%;
-            padding: 10px 15px;
-            border-radius: 18px;
-            position: relative;
-        }
-        .outgoing .bubble {
-            background-color: #007aff;
-            color: white;
-            border-bottom-right-radius: 4px;
-        }
-        .incoming .bubble {
-            background-color: white;
-            color: #000;
-            border-bottom-left-radius: 4px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        }
-        .sender {
-            font-size: 12px;
-            margin-bottom: 5px;
-            opacity: 0.7;
-        }
-        .timestamp {
-            font-size: 10px;
-            opacity: 0.5;
-            margin-top: 5px;
-        }
-        .attachment {
-            margin-top: 10px;
-        }
-        .attachment img {
-            max-width: 100%;
-            border-radius: 8px;
-            display: block;
-        }
-        .attachment-link {
-            color: inherit;
-            text-decoration: none;
-            display: inline-block;
-            background: rgba(0,0,0,0.1);
-            padding: 8px 12px;
-            border-radius: 8px;
-            margin-top: 5px;
-        }
-        .quote {
-            border-left: 3px solid rgba(0,0,0,0.2);
-            padding: 8px 12px;
-            margin-bottom: 10px;
-            background: rgba(0,0,0,0.05);
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        .quote-sender {
-            font-size: 11px;
-            color: rgba(0,0,0,0.5);
-            margin-bottom: 4px;
-            font-weight: 500;
-        }
-        .quote-text {
-            color: rgba(0,0,0,0.7);
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>"""
-            + f"{convo.name}"
-            + """</h1>
-        <p>Conversation ID: """
-            + f"{convo.id}"
-            + """</p>
-        <p>Exported on: """
-            + f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-            + """</p>
-    </div>
-    <div class="messages">
-"""
-        )
+        messages_html = []
 
         for msg in reversed(messages):
             direction_class = "outgoing" if msg.is_outgoing else "incoming"
             sender = "You" if msg.is_outgoing else msg.source[:8]
 
-            html_content.append(f"""
-        <div class="message {direction_class}">
-            <div class="sender">{sender}</div>
-            <div class="bubble">""")
-
+            message_parts = []
             if msg.quote:
                 quote_sender = (
                     msg.quote.get("author") or msg.quote.get("sender") or "Unknown"
                 )
                 quote_text = self._escape_html(msg.quote.get("text", ""))
-                html_content.append(f"""
+                message_parts.append(f"""
                 <div class="quote">
                     <div class="quote-sender">{quote_sender}</div>
                     <div class="quote-text">{quote_text}</div>
                 </div>""")
 
             if msg.body:
-                html_content.append(f"""
+                message_parts.append(f"""
                 <div>{self._escape_html(msg.body)}</div>""")
 
             if msg.attachments and include_attachments:
@@ -1172,9 +1060,6 @@ class SessionDatabase:
                     att_name = att.get("fileName") or "attachment"
                     att_type = att.get("contentType") or ""
 
-                    html_content.append(f"""
-                <div class="attachment">""")
-
                     if att_type.startswith("image/") and att_path:
                         try:
                             decrypted = self.decrypt_attachment(att_path)
@@ -1182,31 +1067,37 @@ class SessionDatabase:
 
                             ext = att_type.split("/")[-1]
                             data_uri = f"data:{att_type};base64,{base64_module.b64encode(decrypted).decode()}"
-                            html_content.append(f"""
+                            message_parts.append(f"""
                     <img src="{data_uri}" alt="{att_name}">""")
                         except Exception as e:
-                            html_content.append(f"""
+                            message_parts.append(f"""
                     <span class="attachment-link">📎 {att_name} (failed to embed: {str(e)})</span>""")
                     else:
-                        html_content.append(f"""
+                        message_parts.append(f"""
                     <span class="attachment-link">📎 {att_name}</span>""")
 
-                    html_content.append("""
-                </div>""")
-
-            html_content.append(f"""
+            messages_html.append(f"""
+        <div class="message {direction_class}">
+            <div class="sender">{sender}</div>
+            <div class="bubble">{"".join(message_parts)}
                 <div class="timestamp">{msg.sent_at.strftime("%Y-%m-%d %H:%M:%S")}</div>
             </div>
         </div>""")
 
-        html_content.append("""
-    </div>
-</body>
-</html>
-""")
+        template_path = Path(__file__).parent / "templates" / "export.html"
+        with open(template_path, "r", encoding="utf-8") as f:
+            template = f.read()
+
+        html_output = template.replace("{{title}}", f"{convo.name} - Session Export")
+        html_output = html_output.replace("{{name}}", convo.name)
+        html_output = html_output.replace("{{id}}", convo.id)
+        html_output = html_output.replace(
+            "{{exported_at}}", datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        )
+        html_output = html_output.replace("{{messages}}", "\n".join(messages_html))
 
         with open(output_path, "w", encoding="utf-8") as f:
-            f.write("".join(html_content))
+            f.write(html_output)
 
     def _escape_html(self, text: str) -> str:
         """Escape HTML special characters."""
@@ -1259,7 +1150,7 @@ class SessionDatabase:
                         convo.id, str(out_file), include_attachments=include_attachments
                     )
             except Exception as e:
-                print(f"Failed to export {convo.name}: {e}")
+                logger.error(f"Failed to export {convo.name}: {e}")
 
     def _sanitize_filename(self, filename: str) -> str:
         """Sanitize filename for filesystem."""
@@ -1497,12 +1388,12 @@ class SessionDatabase:
         if not backup.exists():
             raise FileNotFoundError(f"Backup not found: {backup_path}")
 
-        print("WARNING: This will overwrite your existing Session data!")
-        print(f"Target: {self.config.data_path}")
+        logger.warning("This will overwrite your existing Session data!")
+        logger.warning(f"Target: {self.config.data_path}")
         response = input("Type 'yes' to continue: ")
 
         if response.lower() != "yes":
-            print("Restore cancelled.")
+            logger.info("Restore cancelled.")
             return
 
         temp_backup = None
@@ -1512,14 +1403,14 @@ class SessionDatabase:
                 / f"Session.backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             )
             shutil.move(str(self.config.data_path), str(temp_backup))
-            print(f"Created safety backup: {temp_backup}")
+            logger.info(f"Created safety backup: {temp_backup}")
 
         try:
             if backup.is_file() and backup.suffix == ".enc":
                 import pyaes
                 import hashlib
 
-                print("Decrypting backup...")
+                logger.info("Decrypting backup...")
 
                 with open(backup, "rb") as f:
                     data = f.read()
@@ -1564,8 +1455,8 @@ class SessionDatabase:
             with open(metadata_path) as f:
                 metadata = json.load(f)
 
-            print(f"Restoring backup from: {metadata['created_at']}")
-            print(f"Session ID: {metadata.get('session_id', 'unknown')}")
+            logger.info(f"Restoring backup from: {metadata['created_at']}")
+            logger.info(f"Session ID: {metadata.get('session_id', 'unknown')}")
 
             shutil.copy2(str(Path(backup_path) / "db.sqlite"), str(self.config.db_path))
 
@@ -1577,18 +1468,17 @@ class SessionDatabase:
                     dirs_exist_ok=True,
                 )
 
-            print("Restore completed successfully!")
+            logger.info("Restore completed successfully!")
             if temp_backup:
-                print(f"Safety backup saved to: {temp_backup}")
+                logger.info(f"Safety backup saved to: {temp_backup}")
 
             print("\nPlease restart Session to load the restored data.")
 
         except Exception as e:
-            print(f"Restore failed: {e}")
-            if temp_backup and self.config.data_path.exists():
-                shutil.rmtree(str(self.config.data_path))
+            logger.error(f"Restore failed: {e}")
+            if temp_backup:
                 shutil.move(str(temp_backup), str(self.config.data_path))
-                print("Rolled back to previous state.")
+                logger.info("Rolled back to previous state.")
             raise
 
     def _hash_file(self, file_path: Path) -> str:

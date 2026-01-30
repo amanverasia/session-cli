@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "session-controller"
-version = "1.3.1"
+version = "1.3.2"
 description = "Python CLI tool and library for programmatic control of Session Desktop"
 long_description = {file = "README.md"}
 long_description_content_type = "text/markdown"

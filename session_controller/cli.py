@@ -181,11 +181,14 @@ def cmd_watch(args):
                             try:
                                 decrypted = db.decrypt_attachment(att_path)
 
-                                # Create filename: timestamp_sender_filename
+                                # Create filename: timestamp_sender_filename.ext
                                 safe_name = att_name.replace("/", "_").replace(
                                     "\\", "_"
                                 )
-                                out_name = f"{msg.timestamp}_{sender}_{safe_name}"
+                                ext = Path(att_name).suffix or _guess_extension(
+                                    att_type
+                                )
+                                out_name = f"{msg.timestamp}_{sender}_{safe_name}{ext}"
                                 out_path = media_dir / out_name
 
                                 with open(out_path, "wb") as f:
@@ -287,7 +290,7 @@ def cmd_media(args):
                     # Create output filename
                     ext = Path(att_name).suffix or _guess_extension(att_type)
                     safe_name = att_name.replace("/", "_").replace("\\", "_")
-                    out_name = f"{time_str}_{sender}_{safe_name}"
+                    out_name = f"{time_str}_{sender}_{safe_name}{ext}"
                     out_path = media_dir / out_name
 
                     with open(out_path, "wb") as f:

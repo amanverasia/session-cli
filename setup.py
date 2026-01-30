@@ -11,7 +11,7 @@ setup(
     description="Python CLI tool and library for programmatic control of Session Desktop",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/amanverasia/session-ctl",
+    url="https://github.com/amanverasia/session-cli",
     author="Session Controller Contributors",
     author_email="",
     license="MIT",
@@ -52,8 +52,8 @@ setup(
         ],
     },
     project_urls={
-        "Bug Reports": "https://github.com/amanverasia/session-ctl/issues",
-        "Source": "https://github.com/amanverasia/session-ctl",
-        "Documentation": "https://github.com/amanverasia/session-ctl#readme",
+        "Bug Reports": "https://github.com/amanverasia/session-cli/issues",
+        "Source": "https://github.com/amanverasia/session-cli",
+        "Documentation": "https://github.com/amanverasia/session-cli#readme",
     },
 )

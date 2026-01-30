@@ -46,10 +46,10 @@ dev = [
 session-cli = "session_controller.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/amanverasia/session-ctl"
-Documentation = "https://github.com/amanverasia/session-ctl#readme"
-Repository = "https://github.com/amanverasia/session-ctl"
-"Bug Reports" = "https://github.com/amanverasia/session-ctl/issues"
+Homepage = "https://github.com/amanverasia/session-cli"
+Documentation = "https://github.com/amanverasia/session-cli#readme"
+Repository = "https://github.com/amanverasia/session-cli"
+"Bug Reports" = "https://github.com/amanverasia/session-cli/issues"
 
 [tool.black]
 line-length = 100

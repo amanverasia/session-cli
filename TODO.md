@@ -104,6 +104,12 @@ This document tracks planned features, improvements, and known issues.
 - [ ] CDP connection can timeout on slow networks
 - [ ] Database polling in `watch` mode may miss rapid messages
 
+### Resolved Bugs
+- [x] DateTime import causing `'NoneType' object has no attribute 'replace'` in HTML export
+- [x] Quote text null in database when exporting - fixed by fetching original message
+- [x] NoneType errors when attachment fields exist but are None - fixed with proper parentheses
+- [x] HTML quote styling was broken - improved CSS styling
+
 ### Limitations
 - [ ] No Windows support (paths differ)
 - [ ] CDP attachment sending not implemented
@@ -167,6 +173,12 @@ This document tracks planned features, improvements, and known issues.
 - [x] Restore from backup
 - [x] Include attachments in exports
 - [x] Added pyaes dependency for backup encryption
+
+### Bug Fixes (v1.1.x)
+- [x] Fixed DateTime import order error in HTML export
+- [x] Fixed HTML quote styling for better readability
+- [x] Fixed NoneType errors when attachment fields are None
+- [x] Fixed quote text handling in JSON export - fetches original message by ID when null
 
 ### Repository Setup
 - [x] Create README.md

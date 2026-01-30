@@ -113,6 +113,10 @@ mypy session_controller
 session-cli list
 session-cli messages <id>
 session-cli send <id> "message"
+session-cli export <id> --format json
+session-cli export-all --format html
+session-cli backup --encrypt
+session-cli restore <backup-file>
 
 # Run test connection
 python test_connection.py
@@ -120,6 +124,8 @@ python test_connection.py
 # Run examples
 python examples/basic_usage.py
 python examples/message_watcher.py
+python examples/export_conversation.py
+python examples/backup_session.py
 ```
 
 ## Known Issues & Limitations
@@ -129,6 +135,12 @@ python examples/message_watcher.py
 - **CDP attachment sending**: Not implemented yet (see `cdp.py:send_attachment`)
 - **Database writes**: Read-only access to prevent data corruption
 - **Multi-platform paths**: Need to verify Windows path handling
+
+### Fixed Bugs (v1.1.x)
+- DateTime import order causing `'NoneType' object has no attribute 'replace'` in HTML export
+- Quote text was null in database when exporting - now fetches original message by ID
+- NoneType errors when attachment fields exist but are None - fixed with proper parentheses
+- HTML quote styling improved for better readability
 
 ### Common Pitfalls
 
@@ -146,6 +158,13 @@ python examples/message_watcher.py
    - Paths differ between macOS and Linux
    - Profile naming affects data directory location
    - Attachment paths include subdirectory (e.g., `ab/cd/filename`)
+
+4. **Export & Backup Issues**
+   - Large exports may take time - use progress indicators when possible
+   - HTML exports with many attachments create large files
+   - Backup encryption uses AES-256-ECB - password is critical
+   - Quote text may be null in database - export fetches original message
+   - Use parentheses when combining `.get()` or operator with `.replace()`
 
 ## Adding New Features
 
@@ -183,7 +202,9 @@ python examples/message_watcher.py
 - Context manager for connection handling
 - Decrypts attachments using PyNaCl
 - Provides generators for streaming results
-- Dependencies: `sqlcipher3`, `pynacl`
+- Export conversations to JSON, CSV, HTML formats (with attachments)
+- Backup and restore functionality with AES-256 encryption
+- Dependencies: `sqlcipher3`, `pynacl`, `pyaes`
 
 ### SessionCDP (`cdp.py`)
 - Chrome DevTools Protocol via WebSocket
@@ -203,6 +224,7 @@ python examples/message_watcher.py
 - `sqlcipher3>=0.5.0` - SQLCipher database access
 - `pynacl>=1.5.0` - Attachment decryption (libsodium)
 - `websocket-client>=1.0.0` - CDP WebSocket client
+- `pyaes>=1.6.0` - Backup encryption (AES-256-ECB)
 
 ### Development
 - `pytest>=7.0.0` - Testing framework

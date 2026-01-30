@@ -142,7 +142,7 @@ docs(readme): update installation instructions for Windows
 ## Project Structure
 
 ```
-session-ctl/
+session-cli/
 ├── session_controller/      # Main package
 │   ├── __init__.py
 │   ├── cli.py              # CLI implementation

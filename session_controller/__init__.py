@@ -24,7 +24,7 @@ CLI Usage:
     session-cli watch                   # Watch for new messages
     session-cli search <query>          # Search messages
 
-For more information, see: https://github.com/amanverasia/session-ctl
+For more information, see: https://github.com/amanverasia/session-cli
 """
 
 __version__ = "1.1.0"

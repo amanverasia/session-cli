@@ -35,6 +35,26 @@ except ImportError:
     from .config import SessionConfig
     from .cdp import SessionCDP
 
+from pathlib import Path
+
+
+def get_version():
+    """Get version from package or file."""
+    try:
+        from session_controller import __version__
+
+        return __version__
+    except ImportError:
+        version_file = Path(__file__).parent / "__init__.py"
+        if version_file.exists():
+            for line in version_file.read_text().split("\n"):
+                if "__version__" in line:
+                    return line.split("=")[1].strip().strip('"')
+    return "1.3.0"
+
+
+__version__ = get_version()
+
 
 def cmd_list(args):
     """List all conversations."""
@@ -729,6 +749,9 @@ def main():
         """,
     )
     parser.add_argument(
+        "--version", "-v", action="store_true", help="Show version and exit"
+    )
+    parser.add_argument(
         "--profile", "-p", help="Session profile name (default: production)"
     )
     parser.add_argument(
@@ -947,6 +970,10 @@ def main():
     block_parser.set_defaults(func=cmd_block_request)
 
     args = parser.parse_args()
+
+    if args.version:
+        print(f"session-cli {__version__}")
+        return 0
 
     if not args.command:
         parser.print_help()

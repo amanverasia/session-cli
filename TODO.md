@@ -54,7 +54,7 @@ This document tracks planned features, improvements, and known issues.
 - [ ] Scheduled message sending
 
 ### CLI Improvements
-- [ ] Add `--version` flag
+- [x] Add `--version` flag - COMPLETED
 - [ ] Add interactive mode (REPL)
 - [ ] Add tab completion for commands
 - [ ] Add color output (opt-in with `--color`)

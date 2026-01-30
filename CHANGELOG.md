@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `--version` / `-v` flag to display package version
+
 ## [1.3.0] - 2025-01-31
 
 ### Added

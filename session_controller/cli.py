@@ -9,6 +9,10 @@ Usage:
     session-cli watch [--convo <id>]     # Watch for new messages
     session-cli info                     # Show Session info
     session-cli search <query>           # Search messages
+    session-cli requests                 # List pending requests
+    session-cli accept-request <id>      # Accept a request
+    session-cli decline-request <id>     # Decline a request
+    session-cli block-request <id>       # Block a request
 """
 
 import argparse
@@ -521,12 +525,152 @@ def cmd_restore(args):
             return 1
 
 
+def cmd_requests(args):
+    """List pending requests."""
+    config = SessionConfig(profile=args.profile)
+    with SessionDatabase(config) as db:
+        requests = db.get_pending_requests()
+
+        if args.json:
+            import json
+
+            print(json.dumps([r.raw for r in requests], indent=2))
+            return
+
+        if not requests:
+            print("No pending requests.")
+            return
+
+        print(f"Found {len(requests)} pending request(s):\n")
+        for i, r in enumerate(requests, 1):
+            req_type = ""
+            if r.is_message_request:
+                req_type = " [Message Request]"
+            elif r.is_contact_request:
+                req_type = " [Contact Request]"
+
+            unread = f" ({r.unread_count} unread)" if r.unread_count else ""
+            last = (
+                r.last_message[:40] + "..."
+                if r.last_message and len(r.last_message) > 40
+                else (r.last_message or "(no messages)")
+            )
+            time_str = (
+                r.created_at_datetime.strftime("%Y-%m-%d %H:%M")
+                if r.created_at
+                else "Unknown"
+            )
+
+            print(f"{i}. {r.name}{req_type}")
+            print(f"   ID: {r.id}")
+            print(f"   Type: {r.type}")
+            print(f"   Created: {time_str}")
+            print(f"   Last message: {last}{unread}")
+            print()
+
+
+def cmd_accept_request(args):
+    """Accept a pending request."""
+    try:
+        cdp = SessionCDP(port=args.port)
+        cdp.connect()
+    except Exception as e:
+        print(f"Error: Cannot connect to Session CDP at port {args.port}")
+        print(
+            f"Make sure Session is running with: {SessionCDP.get_launch_command(args.port)}"
+        )
+        print(f"\nDetails: {e}")
+        return 1
+
+    try:
+        config = SessionConfig(profile=args.profile)
+        with SessionDatabase(config) as db:
+            request = db.get_request(args.id)
+            if not request:
+                print(f"Pending request not found: {args.id}")
+                return 1
+
+            print(f"Accepting request from {request.name}...")
+            result = cdp.accept_request(args.id)
+            if result:
+                print(f"✓ Request accepted from {request.name}")
+            else:
+                print("✗ Failed to accept request")
+                return 1
+    finally:
+        cdp.close()
+
+
+def cmd_decline_request(args):
+    """Decline a pending request."""
+    try:
+        cdp = SessionCDP(port=args.port)
+        cdp.connect()
+    except Exception as e:
+        print(f"Error: Cannot connect to Session CDP at port {args.port}")
+        print(
+            f"Make sure Session is running with: {SessionCDP.get_launch_command(args.port)}"
+        )
+        print(f"\nDetails: {e}")
+        return 1
+
+    try:
+        config = SessionConfig(profile=args.profile)
+        with SessionDatabase(config) as db:
+            request = db.get_request(args.id)
+            if not request:
+                print(f"Pending request not found: {args.id}")
+                return 1
+
+            print(f"Declining request from {request.name}...")
+            result = cdp.decline_request(args.id)
+            if result:
+                print(f"✓ Request declined from {request.name}")
+            else:
+                print("✗ Failed to decline request")
+                return 1
+    finally:
+        cdp.close()
+
+
+def cmd_block_request(args):
+    """Block a request sender."""
+    try:
+        cdp = SessionCDP(port=args.port)
+        cdp.connect()
+    except Exception as e:
+        print(f"Error: Cannot connect to Session CDP at port {args.port}")
+        print(
+            f"Make sure Session is running with: {SessionCDP.get_launch_command(args.port)}"
+        )
+        print(f"\nDetails: {e}")
+        return 1
+
+    try:
+        config = SessionConfig(profile=args.profile)
+        with SessionDatabase(config) as db:
+            request = db.get_request(args.id)
+            if not request:
+                print(f"Pending request not found: {args.id}")
+                return 1
+
+            print(f"Blocking {request.name}...")
+            result = cdp.block_request(args.id)
+            if result:
+                print(f"✓ Blocked {request.name}")
+            else:
+                print("✗ Failed to block request")
+                return 1
+    finally:
+        cdp.close()
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Session Desktop Controller",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Examples:
+ Examples:
   session-cli list                          # List conversations
   session-cli messages 05abc123...          # Show messages
   session-cli send 05abc123... "Hello!"     # Send message
@@ -534,6 +678,9 @@ Examples:
   session-cli search "keyword"              # Search messages
   session-cli export 05abc... -o convo.json  # Export conversation
   session-cli backup -o ./backups           # Create backup
+  session-cli requests                     # List pending requests
+  session-cli accept-request 05abc...      # Accept a request
+  session-cli block-request 05abc...       # Block a request
         """,
     )
     parser.add_argument(
@@ -702,6 +849,31 @@ Examples:
     # info
     info_parser = subparsers.add_parser("info", help="Show Session info")
     info_parser.set_defaults(func=cmd_info)
+
+    # requests
+    requests_parser = subparsers.add_parser("requests", help="List pending requests")
+    requests_parser.set_defaults(func=cmd_requests)
+
+    # accept-request
+    accept_parser = subparsers.add_parser(
+        "accept-request", help="Accept a pending request"
+    )
+    accept_parser.add_argument("id", help="Request ID (Session ID or conversation ID)")
+    accept_parser.set_defaults(func=cmd_accept_request)
+
+    # decline-request
+    decline_parser = subparsers.add_parser(
+        "decline-request", help="Decline a pending request"
+    )
+    decline_parser.add_argument("id", help="Request ID (Session ID or conversation ID)")
+    decline_parser.set_defaults(func=cmd_decline_request)
+
+    # block-request
+    block_parser = subparsers.add_parser(
+        "block-request", help="Block and decline a request"
+    )
+    block_parser.add_argument("id", help="Request ID (Session ID or conversation ID)")
+    block_parser.set_defaults(func=cmd_block_request)
 
     args = parser.parse_args()
 

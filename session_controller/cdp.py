@@ -96,11 +96,7 @@ class SessionCDP:
             raise ConnectionError("Not connected. Call connect() first.")
 
         self._message_id += 1
-        message = {
-            "id": self._message_id,
-            "method": method,
-            "params": params or {}
-        }
+        message = {"id": self._message_id, "method": method, "params": params or {}}
 
         self._ws.send(json.dumps(message))
 
@@ -122,11 +118,10 @@ class SessionCDP:
         Returns:
             The result of the evaluation
         """
-        result = self._send_command("Runtime.evaluate", {
-            "expression": expression,
-            "returnByValue": True,
-            "awaitPromise": True
-        })
+        result = self._send_command(
+            "Runtime.evaluate",
+            {"expression": expression, "returnByValue": True, "awaitPromise": True},
+        )
 
         if "exceptionDetails" in result:
             raise RuntimeError(f"JS error: {result['exceptionDetails']}")
@@ -203,10 +198,7 @@ class SessionCDP:
         return result is True
 
     def send_attachment(
-        self,
-        conversation_id: str,
-        file_path: str,
-        caption: Optional[str] = None
+        self, conversation_id: str, file_path: str, caption: Optional[str] = None
     ) -> bool:
         """
         Send a file attachment to a conversation.
@@ -246,6 +238,81 @@ class SessionCDP:
             }})()
         """)
 
+    def accept_request(self, request_id: str) -> bool:
+        """
+        Accept a pending request (contact or message request).
+
+        Args:
+            request_id: The Session ID or conversation ID to accept
+
+        Returns:
+            True if request was accepted successfully
+        """
+        result = self.evaluate(f"""
+            (async function() {{
+                const controller = window.getConversationController();
+                const convo = controller.get('{request_id}');
+                if (!convo) {{
+                    throw new Error('Conversation not found');
+                }}
+                // Accept the request by setting isApproved to true
+                await convo.onApproved();
+                return true;
+            }})()
+        """)
+        return result is True
+
+    def decline_request(self, request_id: str) -> bool:
+        """
+        Decline a pending request without blocking.
+
+        Args:
+            request_id: The Session ID or conversation ID to decline
+
+        Returns:
+            True if request was declined successfully
+        """
+        result = self.evaluate(f"""
+            (async function() {{
+                const controller = window.getConversationController();
+                const convo = controller.get('{request_id}');
+                if (!convo) {{
+                    throw new Error('Conversation not found');
+                }}
+                // Delete the conversation (decline the request)
+                await convo.deleteMessages();
+                await controller.deleteConversation('{request_id}');
+                return true;
+            }})()
+        """)
+        return result is True
+
+    def block_request(self, request_id: str) -> bool:
+        """
+        Decline a pending request and block the sender.
+
+        Args:
+            request_id: The Session ID or conversation ID to block
+
+        Returns:
+            True if sender was blocked successfully
+        """
+        result = self.evaluate(f"""
+            (async function() {{
+                const controller = window.getConversationController();
+                const convo = controller.get('{request_id}');
+                if (!convo) {{
+                    throw new Error('Conversation not found');
+                }}
+                // Block the user and delete the conversation
+                const id = convo.id;
+                await convo.block();
+                await controller.deleteConversation('{request_id}');
+                return true;
+            }})()
+        """)
+        return result is True
+
     # === Utility ===
 
     @staticmethod
@@ -253,7 +320,7 @@ class SessionCDP:
         port: int = DEFAULT_PORT,
         app_path: Optional[str] = None,
         start_in_tray: bool = False,
-        allow_origins: str = "*"
+        allow_origins: str = "*",
     ) -> subprocess.Popen:
         """
         Launch Session with remote debugging enabled.
@@ -273,7 +340,10 @@ class SessionCDP:
                 app_path = "/Applications/Session.app/Contents/MacOS/Session"
             elif system == "Linux":
                 # Common locations
-                for path in ["/usr/bin/session-desktop", "/opt/Session/session-desktop"]:
+                for path in [
+                    "/usr/bin/session-desktop",
+                    "/opt/Session/session-desktop",
+                ]:
                     if Path(path).exists():
                         app_path = path
                         break
@@ -283,7 +353,7 @@ class SessionCDP:
         args = [
             app_path,
             f"--remote-debugging-port={port}",
-            f"--remote-allow-origins={allow_origins}"
+            f"--remote-allow-origins={allow_origins}",
         ]
         if start_in_tray:
             args.append("--start-in-tray")
@@ -301,7 +371,9 @@ class SessionCDP:
         return f'{app} --remote-debugging-port={port} --remote-allow-origins="*"'
 
     @classmethod
-    def wait_for_session(cls, port: int = DEFAULT_PORT, timeout: float = 30.0) -> "SessionCDP":
+    def wait_for_session(
+        cls, port: int = DEFAULT_PORT, timeout: float = 30.0
+    ) -> "SessionCDP":
         """
         Wait for Session to be ready and return connected CDP instance.
 

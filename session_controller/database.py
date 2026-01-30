@@ -82,6 +82,46 @@ class Conversation:
         return self.type in ("group", "groupv2")
 
 
+@dataclass
+class Request:
+    """Represents a pending request (contact or message request)."""
+
+    id: str  # Session ID or group ID
+    type: str  # 'private', 'group', 'groupv2', 'message_request'
+    display_name: Optional[str]
+    nickname: Optional[str]
+    last_message: Optional[str]
+    created_at: int
+    is_approved: bool
+    did_approve_me: bool
+    unread_count: int
+    raw: dict  # Full JSON data
+
+    @property
+    def name(self) -> str:
+        """Get display name, preferring nickname."""
+        return self.nickname or self.display_name or self.id[:8]
+
+    @property
+    def is_contact_request(self) -> bool:
+        """Whether this is a contact request (need to approve them)."""
+        return not self.is_approved
+
+    @property
+    def is_message_request(self) -> bool:
+        """Whether this is a message request (they sent us a message)."""
+        return self.did_approve_me and not self.is_approved
+
+    @property
+    def created_at_datetime(self) -> datetime:
+        """Get creation timestamp as datetime."""
+        return (
+            datetime.fromtimestamp(self.created_at / 1000)
+            if self.created_at
+            else datetime.now()
+        )
+
+
 class SessionDatabase:
     """
     Direct read-only access to Session's SQLCipher database.
@@ -164,6 +204,107 @@ class SessionDatabase:
 
     def __exit__(self, *args):
         self.close()
+
+    # === Requests ===
+
+    def get_pending_requests(self) -> list[Request]:
+        """
+        Get all pending requests (contact and message requests).
+
+        This includes:
+        - Contact requests where the other person sent us a request (didApproveMe = 1)
+        - Message requests from unapproved contacts
+
+        Returns:
+            List of Request objects
+        """
+        conn = self._get_connection()
+        cursor = conn.execute("""
+            SELECT id, type, active_at, displayNameInProfile, nickname,
+                   lastMessage, unreadCount, isApproved, didApproveMe,
+                   avatarInProfile
+            FROM conversations
+            WHERE (isApproved = 0 OR isApproved IS NULL)
+            AND active_at > 0
+            ORDER BY active_at DESC
+        """)
+
+        requests = []
+        for row in cursor:
+            requests.append(
+                Request(
+                    id=row[0],
+                    type=row[1] or "private",
+                    display_name=row[3],
+                    nickname=row[4],
+                    last_message=row[5],
+                    created_at=row[2] or 0,
+                    is_approved=bool(row[7]),
+                    did_approve_me=bool(row[8]),
+                    unread_count=row[6] or 0,
+                    raw={
+                        "id": row[0],
+                        "type": row[1],
+                        "active_at": row[2],
+                        "displayNameInProfile": row[3],
+                        "nickname": row[4],
+                        "lastMessage": row[5],
+                        "unreadCount": row[6],
+                        "isApproved": row[7],
+                        "didApproveMe": row[8],
+                        "avatarInProfile": row[9],
+                    },
+                )
+            )
+
+        return requests
+
+    def get_request(self, request_id: str) -> Optional[Request]:
+        """
+        Get a specific request by ID.
+
+        Args:
+            request_id: The request ID (Session ID or group ID)
+
+        Returns:
+            Request object if found and pending, None otherwise
+        """
+        conn = self._get_connection()
+        cursor = conn.execute(
+            """
+            SELECT id, type, active_at, displayNameInProfile, nickname,
+                   lastMessage, unreadCount, isApproved, didApproveMe
+            FROM conversations
+            WHERE id = ? AND (isApproved = 0 OR isApproved IS NULL)
+        """,
+            (request_id,),
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+
+        return Request(
+            id=row[0],
+            type=row[1] or "private",
+            display_name=row[3],
+            nickname=row[4],
+            last_message=row[5],
+            created_at=row[2] or 0,
+            is_approved=bool(row[7]),
+            did_approve_me=bool(row[8]),
+            unread_count=row[6] or 0,
+            raw={
+                "id": row[0],
+                "type": row[1],
+                "active_at": row[2],
+                "displayNameInProfile": row[3],
+                "nickname": row[4],
+                "lastMessage": row[5],
+                "unreadCount": row[6],
+                "isApproved": row[7],
+                "didApproveMe": row[8],
+            },
+        )
 
     # === Conversations ===
 

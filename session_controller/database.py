@@ -544,7 +544,23 @@ class SessionDatabase:
                     msg_data["attachments"].append(att_data)
 
             if msg.quote:
-                msg_data["quote"] = msg.quote
+                quote_text = msg.quote.get("text")
+                if not quote_text:
+                    quote_id = msg.quote.get("id")
+                    if quote_id:
+                        quoted_msg = self.get_message_by_id(quote_id)
+                        if quoted_msg:
+                            quote_text = quoted_msg.body
+
+                msg_data["quote"] = {
+                    "id": msg.quote.get("id"),
+                    "author": msg.quote.get("author") or msg.quote.get("sender"),
+                    "text": quote_text,
+                    "attachments": msg.quote.get("attachments"),
+                    "referencedMessageNotFound": msg.quote.get(
+                        "referencedMessageNotFound", 0
+                    ),
+                }
 
             export_data["messages"].append(msg_data)
 

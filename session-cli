@@ -1,7 +1,5 @@
 #!/bin/bash
 # Session Controller CLI wrapper
-# Usage: ./session-ctl <command> [args]
+# Usage: ./session-cli <command> [args]
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/.venv/bin/activate"
-python -m session_controller.cli "$@"
+python3 -m session_controller.cli "$@"

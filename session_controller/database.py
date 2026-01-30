@@ -121,6 +121,16 @@ class Request:
             else datetime.now()
         )
 
+    @property
+    def is_private(self) -> bool:
+        """Whether this is a private conversation."""
+        return self.type == "private"
+
+    @property
+    def is_group(self) -> bool:
+        """Whether this is a group conversation."""
+        return self.type in ("group", "groupv2")
+
 
 class SessionDatabase:
     """

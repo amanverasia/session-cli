@@ -192,6 +192,21 @@ This document tracks planned features, improvements, and known issues.
 - [x] Added resolve_contact() helper for contact lookup
 - [x] Added parse_date_filter() for date parsing
 
+### v1.3.0 (Request Management)
+- [x] Added Request dataclass for pending requests
+- [x] Added get_pending_requests() database method
+- [x] Added get_request() database method
+- [x] Added accept_request() CDP method
+- [x] Added decline_request() CDP method
+- [x] Added block_request() CDP method
+- [x] Added requests CLI command to list pending requests
+- [x] Added accept-request CLI command
+- [x] Added decline-request CLI command
+- [x] Added block-request CLI command
+- [x] Added filters to requests command (--type, --conversation-type, --unread)
+- [x] Added grouping in requests output (by request type)
+- [x] Added is_private and is_group properties to Request
+
 ### Repository Setup
 - [x] Create README.md
 - [x] Add LICENSE (MIT)

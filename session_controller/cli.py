@@ -531,6 +531,26 @@ def cmd_requests(args):
     with SessionDatabase(config) as db:
         requests = db.get_pending_requests()
 
+        # Apply filters
+        if args.type:
+            if args.type == "message":
+                requests = [r for r in requests if r.is_message_request]
+            elif args.type == "contact":
+                requests = [
+                    r
+                    for r in requests
+                    if r.is_contact_request and not r.is_message_request
+                ]
+
+        if args.conversation_type:
+            if args.conversation_type == "private":
+                requests = [r for r in requests if r.is_private]
+            elif args.conversation_type == "group":
+                requests = [r for r in requests if r.is_group]
+
+        if args.unread:
+            requests = [r for r in requests if r.unread_count > 0]
+
         if args.json:
             import json
 
@@ -542,31 +562,56 @@ def cmd_requests(args):
             return
 
         print(f"Found {len(requests)} pending request(s):\n")
-        for i, r in enumerate(requests, 1):
-            req_type = ""
-            if r.is_message_request:
-                req_type = " [Message Request]"
-            elif r.is_contact_request:
-                req_type = " [Contact Request]"
 
-            unread = f" ({r.unread_count} unread)" if r.unread_count else ""
-            last = (
-                r.last_message[:40] + "..."
-                if r.last_message and len(r.last_message) > 40
-                else (r.last_message or "(no messages)")
-            )
-            time_str = (
-                r.created_at_datetime.strftime("%Y-%m-%d %H:%M")
-                if r.created_at
-                else "Unknown"
-            )
+        if args.group:
+            # Group by request type
+            message_requests = [r for r in requests if r.is_message_request]
+            contact_requests = [
+                r for r in requests if r.is_contact_request and not r.is_message_request
+            ]
 
-            print(f"{i}. {r.name}{req_type}")
-            print(f"   ID: {r.id}")
-            print(f"   Type: {r.type}")
-            print(f"   Created: {time_str}")
-            print(f"   Last message: {last}{unread}")
-            print()
+            if message_requests:
+                print("=== Message Requests ===")
+                for i, r in enumerate(message_requests, 1):
+                    _print_request(i, r)
+                print()
+
+            if contact_requests:
+                print("=== Contact Requests ===")
+                for i, r in enumerate(contact_requests, 1):
+                    _print_request(i, r)
+        else:
+            # No grouping, just list all
+            for i, r in enumerate(requests, 1):
+                _print_request(i, r)
+
+
+def _print_request(index: int, request):
+    """Helper function to print a single request."""
+    req_type = ""
+    if request.is_message_request:
+        req_type = " [Message Request]"
+    elif request.is_contact_request:
+        req_type = " [Contact Request]"
+
+    unread = f" ({request.unread_count} unread)" if request.unread_count else ""
+    last = (
+        request.last_message[:40] + "..."
+        if request.last_message and len(request.last_message) > 40
+        else (request.last_message or "(no messages)")
+    )
+    time_str = (
+        request.created_at_datetime.strftime("%Y-%m-%d %H:%M")
+        if request.created_at
+        else "Unknown"
+    )
+
+    print(f"{index}. {request.name}{req_type}")
+    print(f"   ID: {request.id}")
+    print(f"   Type: {request.type}")
+    print(f"   Created: {time_str}")
+    print(f"   Last message: {last}{unread}")
+    print()
 
 
 def cmd_accept_request(args):
@@ -852,6 +897,32 @@ def main():
 
     # requests
     requests_parser = subparsers.add_parser("requests", help="List pending requests")
+    requests_parser.add_argument(
+        "--type",
+        "-t",
+        choices=["message", "contact", "all"],
+        default="all",
+        help="Filter by request type",
+    )
+    requests_parser.add_argument(
+        "--conversation-type",
+        "-c",
+        choices=["private", "group", "all"],
+        default="all",
+        help="Filter by conversation type",
+    )
+    requests_parser.add_argument(
+        "--unread",
+        "-u",
+        action="store_true",
+        help="Only show requests with unread messages",
+    )
+    requests_parser.add_argument(
+        "--group",
+        "-g",
+        action="store_true",
+        help="Group requests by type",
+    )
     requests_parser.set_defaults(func=cmd_requests)
 
     # accept-request

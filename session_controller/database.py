@@ -531,7 +531,7 @@ class SessionDatabase:
                             if attachment_output_dir:
                                 att_dir = Path(attachment_output_dir)
                                 att_dir.mkdir(parents=True, exist_ok=True)
-                                safe_name = att.get("fileName", "unnamed").replace(
+                                safe_name = att.get("fileName") or "unnamed".replace(
                                     "/", "_"
                                 )
                                 out_path = att_dir / safe_name
@@ -756,8 +756,8 @@ class SessionDatabase:
             if msg.attachments and include_attachments:
                 for att in msg.attachments:
                     att_path = att.get("path")
-                    att_name = att.get("fileName", "attachment")
-                    att_type = att.get("contentType", "")
+                    att_name = att.get("fileName") or "attachment"
+                    att_type = att.get("contentType") or ""
 
                     html_content.append(f"""
                 <div class="attachment">""")

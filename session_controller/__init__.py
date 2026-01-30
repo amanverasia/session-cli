@@ -27,7 +27,7 @@ CLI Usage:
 For more information, see: https://github.com/amanverasia/session-ctl
 """
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Session Controller Contributors"
 __license__ = "MIT"
 

@@ -206,6 +206,7 @@ This document tracks planned features, improvements, and known issues.
 - [x] Added filters to requests command (--type, --conversation-type, --unread)
 - [x] Added grouping in requests output (by request type)
 - [x] Added is_private and is_group properties to Request
+- [!] **Known Issue**: CDP request management methods need investigation - API methods may have changed in newer Session versions. Listing requests works, but accept/decline/block may not work correctly.
 
 ### Repository Setup
 - [x] Create README.md

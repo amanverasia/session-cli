@@ -3,12 +3,12 @@
 Session Controller CLI
 
 Usage:
-    session-ctl list                     # List conversations
-    session-ctl messages <id> [--limit N]  # Show messages from conversation
-    session-ctl send <id> <message>      # Send a message (requires CDP)
-    session-ctl watch [--convo <id>]     # Watch for new messages
-    session-ctl info                     # Show Session info
-    session-ctl search <query>           # Search messages
+    session-cli list                     # List conversations
+    session-cli messages <id> [--limit N]  # Show messages from conversation
+    session-cli send <id> <message>      # Send a message (requires CDP)
+    session-cli watch [--convo <id>]     # Watch for new messages
+    session-cli info                     # Show Session info
+    session-cli search <query>           # Search messages
 """
 
 import argparse
@@ -40,13 +40,18 @@ def cmd_list(args):
 
         if args.json:
             import json
+
             print(json.dumps([c.raw for c in convos], indent=2))
             return
 
         print(f"Found {len(convos)} conversations:\n")
         for c in convos:
             unread = f" ({c.unread_count} unread)" if c.unread_count else ""
-            last = c.last_message[:40] + "..." if c.last_message and len(c.last_message) > 40 else (c.last_message or "(empty)")
+            last = (
+                c.last_message[:40] + "..."
+                if c.last_message and len(c.last_message) > 40
+                else (c.last_message or "(empty)")
+            )
             print(f"  [{c.type:8}] {c.name}")
             print(f"            ID: {c.id}")
             print(f"            Last: {last}{unread}")
@@ -62,7 +67,11 @@ def cmd_messages(args):
         if not convo:
             # Try partial match
             convos = db.get_conversations()
-            matches = [c for c in convos if args.id.lower() in c.id.lower() or args.id.lower() in c.name.lower()]
+            matches = [
+                c
+                for c in convos
+                if args.id.lower() in c.id.lower() or args.id.lower() in c.name.lower()
+            ]
             if len(matches) == 1:
                 convo = matches[0]
             elif len(matches) > 1:
@@ -78,6 +87,7 @@ def cmd_messages(args):
 
         if args.json:
             import json
+
             print(json.dumps([m.raw for m in messages], indent=2))
             return
 
@@ -102,7 +112,9 @@ def cmd_send(args):
         cdp.connect()
     except Exception as e:
         print(f"Error: Cannot connect to Session CDP at port {args.port}")
-        print(f"Make sure Session is running with: {SessionCDP.get_launch_command(args.port)}")
+        print(
+            f"Make sure Session is running with: {SessionCDP.get_launch_command(args.port)}"
+        )
         print(f"\nDetails: {e}")
         return 1
 
@@ -141,7 +153,9 @@ def cmd_watch(args):
         convos = {c.id: c.name for c in db.get_conversations()}
 
         try:
-            for msg in db.watch_messages(poll_interval=args.interval, conversation_id=args.convo):
+            for msg in db.watch_messages(
+                poll_interval=args.interval, conversation_id=args.convo
+            ):
                 time_str = msg.sent_at.strftime("%H:%M:%S")
                 convo_name = convos.get(msg.conversation_id, msg.conversation_id[:12])
                 direction = "→" if msg.is_outgoing else "←"
@@ -155,10 +169,10 @@ def cmd_watch(args):
                 if msg.attachments:
                     print(f"  📎 {len(msg.attachments)} attachment(s):")
                     for att in msg.attachments:
-                        att_type = att.get('contentType', 'unknown')
-                        att_name = att.get('fileName', 'unnamed')
-                        att_size = att.get('size', 0)
-                        att_path = att.get('path')
+                        att_type = att.get("contentType", "unknown")
+                        att_name = att.get("fileName", "unnamed")
+                        att_size = att.get("size", 0)
+                        att_path = att.get("path")
 
                         print(f"     - {att_name} ({att_type}, {att_size} bytes)")
 
@@ -168,11 +182,13 @@ def cmd_watch(args):
                                 decrypted = db.decrypt_attachment(att_path)
 
                                 # Create filename: timestamp_sender_filename
-                                safe_name = att_name.replace('/', '_').replace('\\', '_')
+                                safe_name = att_name.replace("/", "_").replace(
+                                    "\\", "_"
+                                )
                                 out_name = f"{msg.timestamp}_{sender}_{safe_name}"
                                 out_path = media_dir / out_name
 
-                                with open(out_path, 'wb') as f:
+                                with open(out_path, "wb") as f:
                                     f.write(decrypted)
                                 print(f"       ✓ Saved to {out_path}")
                             except Exception as e:
@@ -192,6 +208,7 @@ def cmd_search(args):
 
         if args.json:
             import json
+
             print(json.dumps([m.raw for m in results], indent=2))
             return
 
@@ -220,18 +237,24 @@ def cmd_media(args):
     with SessionDatabase(config) as db:
         # Get messages with attachments
         conn = db.connection
-        cursor = conn.execute("""
+        cursor = conn.execute(
+            """
             SELECT json FROM messages
             WHERE conversationId = ? AND hasAttachments = 1
             ORDER BY sent_at DESC
             LIMIT ?
-        """, (args.id, args.limit))
+        """,
+            (args.id, args.limit),
+        )
 
         import json as json_module
+
         messages = [db._parse_message(json_module.loads(row[0])) for row in cursor]
 
         if not messages:
-            print(f"No messages with attachments found in conversation {args.id[:16]}...")
+            print(
+                f"No messages with attachments found in conversation {args.id[:16]}..."
+            )
             return
 
         print(f"Found {len(messages)} messages with attachments")
@@ -243,10 +266,10 @@ def cmd_media(args):
             sender = "You" if msg.is_outgoing else msg.source[:8]
 
             for att in msg.attachments:
-                att_name = att.get('fileName', 'unnamed')
-                att_path = att.get('path')
-                att_type = att.get('contentType', 'unknown')
-                att_size = att.get('size', 0)
+                att_name = att.get("fileName", "unnamed")
+                att_path = att.get("path")
+                att_type = att.get("contentType", "unknown")
+                att_size = att.get("size", 0)
 
                 if not att_path:
                     print(f"  ✗ {att_name} - no path (not downloaded yet?)")
@@ -263,11 +286,11 @@ def cmd_media(args):
 
                     # Create output filename
                     ext = Path(att_name).suffix or _guess_extension(att_type)
-                    safe_name = att_name.replace('/', '_').replace('\\', '_')
+                    safe_name = att_name.replace("/", "_").replace("\\", "_")
                     out_name = f"{time_str}_{sender}_{safe_name}"
                     out_path = media_dir / out_name
 
-                    with open(out_path, 'wb') as f:
+                    with open(out_path, "wb") as f:
                         f.write(decrypted)
 
                     print(f"  ✓ {out_name} ({len(decrypted)} bytes)")
@@ -282,18 +305,18 @@ def cmd_media(args):
 def _guess_extension(content_type: str) -> str:
     """Guess file extension from content type."""
     mapping = {
-        'image/jpeg': '.jpg',
-        'image/png': '.png',
-        'image/gif': '.gif',
-        'image/webp': '.webp',
-        'video/mp4': '.mp4',
-        'video/webm': '.webm',
-        'audio/mpeg': '.mp3',
-        'audio/ogg': '.ogg',
-        'audio/aac': '.aac',
-        'application/pdf': '.pdf',
+        "image/jpeg": ".jpg",
+        "image/png": ".png",
+        "image/gif": ".gif",
+        "image/webp": ".webp",
+        "video/mp4": ".mp4",
+        "video/webm": ".webm",
+        "audio/mpeg": ".mp3",
+        "audio/ogg": ".ogg",
+        "audio/aac": ".aac",
+        "application/pdf": ".pdf",
     }
-    return mapping.get(content_type, '')
+    return mapping.get(content_type, "")
 
 
 def cmd_info(args):
@@ -321,6 +344,7 @@ def cmd_info(args):
     print("\n  CDP Status:")
     try:
         import urllib.request
+
         with urllib.request.urlopen(f"http://localhost:{args.port}/json", timeout=1):
             print(f"    ✓ Available on port {args.port}")
     except:
@@ -334,15 +358,19 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  session-ctl list                          # List conversations
-  session-ctl messages 05abc123...          # Show messages
-  session-ctl send 05abc123... "Hello!"     # Send message
-  session-ctl watch                         # Watch for new messages
-  session-ctl search "keyword"              # Search messages
-        """
+  session-cli list                          # List conversations
+  session-cli messages 05abc123...          # Show messages
+  session-cli send 05abc123... "Hello!"     # Send message
+  session-cli watch                         # Watch for new messages
+  session-cli search "keyword"              # Search messages
+        """,
     )
-    parser.add_argument("--profile", "-p", help="Session profile name (default: production)")
-    parser.add_argument("--port", type=int, default=9222, help="CDP port (default: 9222)")
+    parser.add_argument(
+        "--profile", "-p", help="Session profile name (default: production)"
+    )
+    parser.add_argument(
+        "--port", type=int, default=9222, help="CDP port (default: 9222)"
+    )
     parser.add_argument("--json", "-j", action="store_true", help="Output as JSON")
 
     subparsers = parser.add_subparsers(dest="command", help="Command")
@@ -352,9 +380,13 @@ Examples:
     list_parser.set_defaults(func=cmd_list)
 
     # messages
-    msg_parser = subparsers.add_parser("messages", help="Show messages from conversation")
+    msg_parser = subparsers.add_parser(
+        "messages", help="Show messages from conversation"
+    )
     msg_parser.add_argument("id", help="Conversation ID or name")
-    msg_parser.add_argument("--limit", "-n", type=int, default=20, help="Number of messages")
+    msg_parser.add_argument(
+        "--limit", "-n", type=int, default=20, help="Number of messages"
+    )
     msg_parser.set_defaults(func=cmd_messages)
 
     # send
@@ -366,22 +398,39 @@ Examples:
     # watch
     watch_parser = subparsers.add_parser("watch", help="Watch for new messages")
     watch_parser.add_argument("--convo", "-c", help="Only watch this conversation")
-    watch_parser.add_argument("--interval", "-i", type=float, default=1.0, help="Poll interval in seconds")
-    watch_parser.add_argument("--save-media", "-m", action="store_true", help="Save media attachments")
-    watch_parser.add_argument("--media-dir", "-d", default="./media", help="Directory to save media (default: ./media)")
+    watch_parser.add_argument(
+        "--interval", "-i", type=float, default=1.0, help="Poll interval in seconds"
+    )
+    watch_parser.add_argument(
+        "--save-media", "-m", action="store_true", help="Save media attachments"
+    )
+    watch_parser.add_argument(
+        "--media-dir",
+        "-d",
+        default="./media",
+        help="Directory to save media (default: ./media)",
+    )
     watch_parser.set_defaults(func=cmd_watch)
 
     # search
     search_parser = subparsers.add_parser("search", help="Search messages")
     search_parser.add_argument("query", help="Search query")
-    search_parser.add_argument("--limit", "-n", type=int, default=20, help="Number of results")
+    search_parser.add_argument(
+        "--limit", "-n", type=int, default=20, help="Number of results"
+    )
     search_parser.set_defaults(func=cmd_search)
 
     # media
-    media_parser = subparsers.add_parser("media", help="Download media from a conversation")
+    media_parser = subparsers.add_parser(
+        "media", help="Download media from a conversation"
+    )
     media_parser.add_argument("id", help="Conversation ID")
-    media_parser.add_argument("--output", "-o", default="./media", help="Output directory (default: ./media)")
-    media_parser.add_argument("--limit", "-n", type=int, default=100, help="Max messages to scan")
+    media_parser.add_argument(
+        "--output", "-o", default="./media", help="Output directory (default: ./media)"
+    )
+    media_parser.add_argument(
+        "--limit", "-n", type=int, default=100, help="Max messages to scan"
+    )
     media_parser.set_defaults(func=cmd_media)
 
     # info

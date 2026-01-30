@@ -16,15 +16,15 @@ A Python CLI tool and library for programmatic control of [Session Desktop](http
 ### From GitHub
 
 ```bash
-git clone https://github.com/amanverasia/session-ctl.git
-cd session-ctl
+git clone https://github.com/amanverasia/session-cli.git
+cd session-cli
 pip install -e .
 ```
 
 Or install directly with pip:
 
 ```bash
-pip install git+https://github.com/amanverasia/session-ctl.git
+pip install git+https://github.com/amanverasia/session-cli.git
 ```
 
 ### Requirements
@@ -40,14 +40,14 @@ pip install git+https://github.com/amanverasia/session-ctl.git
 ### List Conversations
 
 ```bash
-session-ctl list
+session-cli list
 ```
 
 ### View Messages
 
 ```bash
-session-ctl messages 05abc123...
-session-ctl messages "friend name" --limit 10
+session-cli messages 05abc123...
+session-cli messages "friend name" --limit 10
 ```
 
 ### Send a Message
@@ -61,26 +61,26 @@ First, start Session with remote debugging enabled:
 Then send a message:
 
 ```bash
-session-ctl send 05abc123... "Hello from CLI!"
+session-cli send 05abc123... "Hello from CLI!"
 ```
 
 ### Watch for New Messages
 
 ```bash
-session-ctl watch
-session-ctl watch --convo 05abc123... --save-media
+session-cli watch
+session-cli watch --convo 05abc123... --save-media
 ```
 
 ### Search Messages
 
 ```bash
-session-ctl search "keyword"
+session-cli search "keyword"
 ```
 
 ### Download Media
 
 ```bash
-session-ctl media 05abc123... --output ./downloads
+session-cli media 05abc123... --output ./downloads
 ```
 
 ## CLI Commands
@@ -144,10 +144,10 @@ Work with multiple Session instances:
 
 ```bash
 # Use development profile
-session-ctl --profile development list
+session-cli --profile development list
 
 # Use custom profile
-session-ctl --profile devprod1 send 05abc... "Hello"
+session-cli --profile devprod1 send 05abc... "Hello"
 ```
 
 ## CDP Setup
@@ -226,7 +226,7 @@ Make sure Session is running with:
 ### "Database not found"
 Ensure Session has been run at least once:
 ```bash
-session-ctl info
+session-cli info
 ```
 
 ### "sqlcipher3 not installed"
@@ -238,8 +238,8 @@ pip install sqlcipher3
 
 ```bash
 # Clone repository
-git clone https://github.com/amanverasia/session-ctl.git
-cd session-ctl
+git clone https://github.com/amanverasia/session-cli.git
+cd session-cli
 
 # Create virtual environment
 python -m venv .venv

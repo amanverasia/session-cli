@@ -18,11 +18,11 @@ Example:
         cdp.send_message("05abc...", "Hello!")
 
 CLI Usage:
-    session-ctl list                    # List conversations
-    session-ctl messages <id>           # Show messages
-    session-ctl send <id> <message>     # Send message
-    session-ctl watch                   # Watch for new messages
-    session-ctl search <query>          # Search messages
+    session-cli list                    # List conversations
+    session-cli messages <id>           # Show messages
+    session-cli send <id> <message>     # Send message
+    session-cli watch                   # Watch for new messages
+    session-cli search <query>          # Search messages
 
 For more information, see: https://github.com/amanverasia/session-ctl
 """

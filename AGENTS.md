@@ -110,9 +110,9 @@ mypy session_controller
 ### Common Commands
 ```bash
 # Run CLI
-session-ctl list
-session-ctl messages <id>
-session-ctl send <id> "message"
+session-cli list
+session-cli messages <id>
+session-cli send <id> "message"
 
 # Run test connection
 python test_connection.py

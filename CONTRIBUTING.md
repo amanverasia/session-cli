@@ -14,7 +14,7 @@ Before creating bug reports, please check the existing issues to avoid duplicate
 - Actual behavior
 - Your operating system and Session Desktop version
 - Python version (`python --version`)
-- Session Controller version (`session-ctl --version` if available)
+- Session Controller version (`session-cli --version` if available)
 
 ### Suggesting Enhancements
 
@@ -32,8 +32,8 @@ Enhancement suggestions are welcome! When suggesting a new feature:
 1. Fork the repository on GitHub
 2. Clone your fork:
    ```bash
-   git clone https://github.com/your-username/session-ctl.git
-   cd session-ctl
+   git clone https://github.com/your-username/session-cli.git
+   cd session-cli
    ```
 
 ### Set Up Development Environment

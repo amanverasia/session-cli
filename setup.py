@@ -47,7 +47,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "session-ctl=session_controller.cli:main",
+            "session-cli=session_controller.cli:main",
         ],
     },
     project_urls={

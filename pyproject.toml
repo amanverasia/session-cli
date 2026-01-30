@@ -42,7 +42,7 @@ dev = [
 ]
 
 [project.scripts]
-session-ctl = "session_controller.cli:main"
+session-cli = "session_controller.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/amanverasia/session-ctl"

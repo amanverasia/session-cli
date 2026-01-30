@@ -39,10 +39,10 @@ This document tracks planned features, improvements, and known issues.
 - [ ] Add message deletion support
 - [ ] Add contact management (add, remove, block)
 - [ ] Add profile management via CLI
-- [ ] Backup and restore Session data (full and incremental) - COMPLETED
+- [x] Backup and restore Session data (full and incremental) - COMPLETED
 - [ ] Statistics and analytics dashboard
-- [ ] Enhanced search with filters (date range, sender, attachments)
-- [ ] Message filtering by type (text, attachment, quote)
+- [x] Enhanced search with filters (date range, sender, attachments) - COMPLETED
+- [x] Message filtering by type (text, attachment, quote) - COMPLETED
 - [ ] Configuration file support (`~/.session-cli/config.yaml`)
 - [ ] Webhook integration for automation
 - [ ] Auto-reply bot framework
@@ -179,6 +179,18 @@ This document tracks planned features, improvements, and known issues.
 - [x] Fixed HTML quote styling for better readability
 - [x] Fixed NoneType errors when attachment fields are None
 - [x] Fixed quote text handling in JSON export - fetches original message by ID when null
+
+### v1.2.0 (Enhanced Search & Filtering)
+- [x] Added search_messages_enhanced() with advanced filtering
+- [x] Date range filtering with relative date support (today, yesterday, 7d, 30d, etc.)
+- [x] Filter by conversation ID or name
+- [x] Filter by message type (text, attachment, quote, all)
+- [x] Filter by sender (Session ID or name)
+- [x] Filter unread messages only
+- [x] Search without query text to apply filters only
+- [x] Added find_conversation() helper for name/ID resolution
+- [x] Added resolve_contact() helper for contact lookup
+- [x] Added parse_date_filter() for date parsing
 
 ### Repository Setup
 - [x] Create README.md

@@ -7,7 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.1.0] - 2025-01-31
+## [1.2.0] - 2025-01-31
+
+### Added
+- Enhanced search with advanced filtering options
+- Date range filtering (after/before) with relative date support (today, yesterday, 7d, 30d, etc.)
+- Filter by conversation ID or name
+- Filter by message type (text, attachment, quote, all)
+- Filter by sender (Session ID or name)
+- Filter unread messages only
+- Search without query text to apply filters only
+- Helper methods: `find_conversation()` and `resolve_contact()` for name/ID resolution
+- Date parsing utility supporting multiple formats (ISO, relative, Unix timestamp)
+
+### Changed
+- Search command now supports optional query text (can be omitted to filter only)
+- Improved search result display showing message type indicators
+
+### Features
+- Search messages from specific conversations
+- Search by date range (e.g., "messages from last 7 days")
+- Find all attachments or quotes
+- Find messages from specific senders
+- Find unread messages across all conversations
+
+### CLI Usage Examples
+```bash
+# Basic search (unchanged)
+session-cli search "keyword"
+
+# Date range filtering
+session-cli search --after 7d
+session-cli search "meeting" --after yesterday --before today
+session-cli search --after "2025-01-01" --before "2025-01-31"
+
+# Filter by conversation
+session-cli search --conversation "John Doe"
+session-cli search "important" --conversation "Work Group"
+
+# Filter by message type
+session-cli search --type attachment
+session-cli search --type quote
+session-cli search "report" --type text
+
+# Filter by sender
+session-cli search --sender "Alice"
+
+# Unread messages only
+session-cli search --unread-only
+
+# Combine filters
+session-cli search "project" --after 30d --conversation "Team Chat" --type text --limit 50
+```
+
+## [1.1.0] - 2025-01-30
 
 ### Added
 - Export conversations to JSON format with optional attachments

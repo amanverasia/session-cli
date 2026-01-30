@@ -73,8 +73,56 @@ session-cli watch --convo 05abc123... --save-media
 
 ### Search Messages
 
+Basic search:
 ```bash
 session-cli search "keyword"
+```
+
+Search with date filters:
+```bash
+# Messages from last 7 days
+session-cli search --after 7d
+
+# Messages between yesterday and today
+session-cli search "meeting" --after yesterday --before today
+
+# Messages in January 2025
+session-cli search --after "2025-01-01" --before "2025-01-31"
+```
+
+Search by conversation:
+```bash
+# Search in specific conversation
+session-cli search --conversation "John Doe"
+session-cli search "important" --conversation "Work Group"
+```
+
+Filter by message type:
+```bash
+# Find all attachments
+session-cli search --type attachment
+
+# Find all quoted messages
+session-cli search --type quote
+
+# Text messages only
+session-cli search "report" --type text
+```
+
+Filter by sender:
+```bash
+session-cli search --sender "Alice"
+session-cli search "project" --sender "Bob"
+```
+
+Unread messages only:
+```bash
+session-cli search --unread-only
+```
+
+Combine multiple filters:
+```bash
+session-cli search "project" --after 30d --conversation "Team Chat" --type text --limit 50
 ```
 
 ### Download Media
@@ -155,7 +203,7 @@ session-backup-20260130_123456/
 | `messages <id>` | Show messages from a conversation |
 | `send <id> <msg>` | Send a message (requires CDP) |
 | `watch` | Watch for new messages |
-| `search <query>` | Search messages |
+| `search <query>` | Search messages with filters (--after, --before, --conversation, --type, --sender, --unread-only) |
 | `media <id>` | Download media from conversation |
 | `export <id>` | Export a conversation to file |
 | `export-all` | Export all conversations to directory |
@@ -175,13 +223,28 @@ with SessionDatabase() as db:
     # List conversations
     for convo in db.get_conversations():
         print(f"{convo.name}: {convo.last_message}")
-    
+
     # Get messages
     messages = db.get_messages(convo.id, limit=10)
-    
-    # Search
+
+    # Basic search
     results = db.search_messages("keyword")
-    
+
+    # Enhanced search with filters
+    results = db.search_messages_enhanced(
+        query="project",
+        conversation_id=convo.id,
+        after_timestamp=db.parse_date_filter("7d"),
+        message_type="text",
+        limit=50
+    )
+
+    # Find conversation by name or ID
+    convo = db.find_conversation("John Doe")
+
+    # Resolve contact name to Session ID
+    session_id = db.resolve_contact("Alice")
+
     # Decrypt attachment
     decrypted = db.decrypt_attachment("ab/cd/abcd1234...")
 

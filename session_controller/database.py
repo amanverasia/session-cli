@@ -243,6 +243,103 @@ class SessionDatabase:
             },
         )
 
+    def find_conversation(self, search: str) -> Optional[Conversation]:
+        """
+        Find a conversation by ID or display name/nickname.
+
+        Args:
+            search: Conversation ID, display name, or nickname
+
+        Returns:
+            Conversation object if found, None otherwise
+        """
+        # First try as exact ID
+        convo = self.get_conversation(search)
+        if convo:
+            return convo
+
+        # Search by display name or nickname (case-insensitive)
+        conn = self._get_connection()
+        cursor = conn.execute(
+            """
+            SELECT id, type, active_at, displayNameInProfile, nickname,
+                   lastMessage, unreadCount
+            FROM conversations
+            WHERE LOWER(displayNameInProfile) LIKE ? OR LOWER(nickname) LIKE ?
+            LIMIT 1
+        """,
+            (f"%{search.lower()}%", f"%{search.lower()}%"),
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+
+        return Conversation(
+            id=row[0],
+            type=row[1] or "private",
+            display_name=row[3],
+            nickname=row[4],
+            last_message=row[5],
+            active_at=row[2] or 0,
+            unread_count=row[6] or 0,
+            raw={
+                "id": row[0],
+                "type": row[1],
+                "active_at": row[2],
+                "displayNameInProfile": row[3],
+                "nickname": row[4],
+                "lastMessage": row[5],
+                "unreadCount": row[6],
+            },
+        )
+
+    def resolve_contact(self, search: str) -> Optional[str]:
+        """
+        Resolve a contact search to their Session ID.
+
+        Args:
+            search: Session ID, display name, or phone number
+
+        Returns:
+            Session ID if found, None otherwise
+        """
+        # Check if it's already a valid Session ID (starts with 05 and is 66 chars)
+        if search.startswith("05") and len(search) == 66:
+            return search
+
+        # Search by display name in conversations
+        conn = self._get_connection()
+        cursor = conn.execute(
+            """
+            SELECT source
+            FROM messages
+            WHERE JSON_EXTRACT(json, '$.source') LIKE ?
+            GROUP BY source
+            LIMIT 1
+        """,
+            (f"%{search}%",),
+        )
+        row = cursor.fetchone()
+        if row and row[0]:
+            return row[0]
+
+        # Search by conversation display name (for private chats)
+        cursor = conn.execute(
+            """
+            SELECT id
+            FROM conversations
+            WHERE type = 'private'
+            AND (LOWER(displayNameInProfile) LIKE ? OR LOWER(nickname) LIKE ?)
+            LIMIT 1
+        """,
+            (f"%{search.lower()}%", f"%{search.lower()}%"),
+        )
+        row = cursor.fetchone()
+        if row:
+            return row[0]
+
+        return None
+
     # === Messages ===
 
     def get_messages(
@@ -338,6 +435,156 @@ class SessionDatabase:
         )
 
         return [self._parse_message(json.loads(row[0])) for row in cursor]
+
+    def search_messages_enhanced(
+        self,
+        query: Optional[str] = None,
+        conversation_id: Optional[str] = None,
+        after_timestamp: Optional[int] = None,
+        before_timestamp: Optional[int] = None,
+        message_type: Optional[str] = None,
+        sender: Optional[str] = None,
+        unread_only: bool = False,
+        limit: int = 50,
+    ) -> list[Message]:
+        """
+        Search messages with advanced filtering options.
+
+        Args:
+            query: Full-text search query (uses FTS5). If None, returns all matching filters.
+            conversation_id: Filter by conversation ID
+            after_timestamp: Only messages after this timestamp (ms)
+            before_timestamp: Only messages before this timestamp (ms)
+            message_type: Filter by type ("text", "attachment", "quote", "all")
+            sender: Filter by sender (Session ID)
+            unread_only: Only unread messages
+            limit: Maximum number of results
+
+        Returns:
+            List of matching messages
+        """
+        conn = self._get_connection()
+
+        # Build WHERE clauses
+        where_clauses = []
+        params = []
+
+        if query:
+            where_clauses.append(
+                "m.rowid IN (SELECT rowid FROM messages_fts WHERE messages_fts MATCH ?)"
+            )
+            params.append(query)
+
+        if conversation_id:
+            where_clauses.append("m.conversationId = ?")
+            params.append(conversation_id)
+
+        if after_timestamp:
+            where_clauses.append("m.sent_at > ?")
+            params.append(after_timestamp)
+
+        if before_timestamp:
+            where_clauses.append("m.sent_at < ?")
+            params.append(before_timestamp)
+
+        if sender:
+            where_clauses.append("m.source = ?")
+            params.append(sender)
+
+        if unread_only:
+            where_clauses.append(
+                "JSON_EXTRACT(m.json, '$.isRead') = 0 OR JSON_EXTRACT(m.json, '$.isRead') IS NULL"
+            )
+
+        where_sql = " AND ".join(where_clauses) if where_clauses else "1=1"
+
+        sql = f"""
+            SELECT m.json FROM messages m
+            WHERE {where_sql}
+            ORDER BY m.sent_at DESC
+            LIMIT ?
+        """
+        params.append(limit)
+
+        cursor = conn.execute(sql, params)
+        messages = [self._parse_message(json.loads(row[0])) for row in cursor]
+
+        # Filter by message type (text/attachment/quote) after retrieval
+        if message_type and message_type != "all":
+            filtered = []
+            for msg in messages:
+                if (
+                    message_type == "text"
+                    and msg.body
+                    and not msg.attachments
+                    and not msg.quote
+                ):
+                    filtered.append(msg)
+                elif message_type == "attachment" and msg.attachments:
+                    filtered.append(msg)
+                elif message_type == "quote" and msg.quote:
+                    filtered.append(msg)
+            messages = filtered
+
+        return messages
+
+    def parse_date_filter(self, date_str: str) -> int:
+        """
+        Parse date filter string to timestamp in milliseconds.
+
+        Supports:
+        - Relative: "today", "yesterday", "7d", "30d", "1w", "1m"
+        - ISO format: "2025-01-31"
+        - ISO with time: "2025-01-31T14:30:00"
+        - Unix timestamp (seconds): "1706704200"
+
+        Args:
+            date_str: Date string to parse
+
+        Returns:
+            Timestamp in milliseconds
+        """
+        from datetime import datetime, timedelta
+
+        now = datetime.now()
+        today_start = datetime(now.year, now.month, now.day)
+
+        relative_map = {
+            "today": 0,
+            "yesterday": 1,
+            "1d": 1,
+            "2d": 2,
+            "3d": 3,
+            "7d": 7,
+            "14d": 14,
+            "30d": 30,
+            "1w": 7,
+            "2w": 14,
+            "1m": 30,
+        }
+
+        if date_str.lower() in relative_map:
+            days = relative_map[date_str.lower()]
+            return int((today_start - timedelta(days=days)).timestamp() * 1000)
+
+        # Try ISO format
+        for fmt in ["%Y-%m-%dT%H:%M:%S", "%Y-%m-%d", "%Y-%m-%d %H:%M:%S"]:
+            try:
+                dt = datetime.strptime(date_str, fmt)
+                return int(dt.timestamp() * 1000)
+            except ValueError:
+                continue
+
+        # Try Unix timestamp
+        try:
+            ts = int(date_str)
+            if ts < 10000000000:  # Assume seconds if less than year 2286
+                return ts * 1000
+            return ts
+        except ValueError:
+            pass
+
+        raise ValueError(f"Invalid date format: {date_str}")
 
     def _parse_message(self, data: dict) -> Message:
         """Parse message JSON into Message object."""

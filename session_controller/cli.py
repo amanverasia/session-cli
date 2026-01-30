@@ -206,10 +206,53 @@ def cmd_watch(args):
 
 
 def cmd_search(args):
-    """Search messages."""
+    """Search messages with enhanced filtering."""
     config = SessionConfig(profile=args.profile)
     with SessionDatabase(config) as db:
-        results = db.search_messages(args.query, limit=args.limit)
+        # Parse date filters
+        after_timestamp = None
+        before_timestamp = None
+        if args.after:
+            try:
+                after_timestamp = db.parse_date_filter(args.after)
+            except ValueError as e:
+                print(f"Invalid --after date: {e}")
+                return 1
+
+        if args.before:
+            try:
+                before_timestamp = db.parse_date_filter(args.before)
+            except ValueError as e:
+                print(f"Invalid --before date: {e}")
+                return 1
+
+        # Resolve conversation name to ID if needed
+        conversation_id = None
+        if args.conversation:
+            convo = db.find_conversation(args.conversation)
+            if convo:
+                conversation_id = convo.id
+            else:
+                conversation_id = args.conversation
+
+        # Resolve sender name to Session ID if needed
+        sender = None
+        if args.sender:
+            sender = db.resolve_contact(args.sender)
+
+        # Build search params
+        search_params = {
+            "query": args.query,
+            "conversation_id": conversation_id,
+            "after_timestamp": after_timestamp,
+            "before_timestamp": before_timestamp,
+            "message_type": args.type,
+            "sender": sender,
+            "unread_only": args.unread_only,
+            "limit": args.limit,
+        }
+
+        results = db.search_messages_enhanced(**search_params)
 
         if args.json:
             import json
@@ -217,7 +260,28 @@ def cmd_search(args):
             print(json.dumps([m.raw for m in results], indent=2))
             return
 
-        print(f"Found {len(results)} messages matching '{args.query}':\n")
+        # Build filter description
+        filter_desc = []
+        if args.query:
+            filter_desc.append(f"'{args.query}'")
+        if args.conversation:
+            filter_desc.append(f"conversation: {args.conversation}")
+        if args.after:
+            filter_desc.append(f"after: {args.after}")
+        if args.before:
+            filter_desc.append(f"before: {args.before}")
+        if args.type != "all":
+            filter_desc.append(f"type: {args.type}")
+        if args.sender:
+            filter_desc.append(f"sender: {args.sender}")
+        if args.unread_only:
+            filter_desc.append("unread only")
+
+        filter_str = " AND ".join(filter_desc) if filter_desc else "all messages"
+        print(f"Found {len(results)} messages matching {filter_str}:\n")
+
+        if not results:
+            return
 
         convos = {c.id: c.name for c in db.get_conversations()}
 
@@ -226,7 +290,13 @@ def cmd_search(args):
             convo_name = convos.get(msg.conversation_id, msg.conversation_id[:12])
             body = msg.body[:60] if msg.body else "(no text)"
 
-            print(f"[{time_str}] {convo_name}")
+            msg_type = ""
+            if msg.attachments:
+                msg_type = " [📎 attachment]"
+            if msg.quote:
+                msg_type = " [↩ quote]"
+
+            print(f"[{time_str}] {convo_name}{msg_type}")
             print(f"  {body}...")
             print()
 
@@ -515,9 +585,35 @@ Examples:
 
     # search
     search_parser = subparsers.add_parser("search", help="Search messages")
-    search_parser.add_argument("query", help="Search query")
+    search_parser.add_argument(
+        "query", nargs="?", help="Search query (leave empty to apply filters only)"
+    )
     search_parser.add_argument(
         "--limit", "-n", type=int, default=20, help="Number of results"
+    )
+    search_parser.add_argument(
+        "--conversation", "-c", help="Filter by conversation ID or name"
+    )
+    search_parser.add_argument(
+        "--after",
+        "-a",
+        help="Filter messages after this date (e.g., 'today', 'yesterday', '7d', '2025-01-31')",
+    )
+    search_parser.add_argument(
+        "--before", "-b", help="Filter messages before this date"
+    )
+    search_parser.add_argument(
+        "--type",
+        "-t",
+        choices=["text", "attachment", "quote", "all"],
+        default="all",
+        help="Filter by message type",
+    )
+    search_parser.add_argument(
+        "--sender", "-s", help="Filter by sender (Session ID or name)"
+    )
+    search_parser.add_argument(
+        "--unread-only", "-u", action="store_true", help="Only show unread messages"
     )
     search_parser.set_defaults(func=cmd_search)
 

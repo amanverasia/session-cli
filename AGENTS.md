@@ -118,6 +118,14 @@ session-cli export-all --format html
 session-cli backup --encrypt
 session-cli restore <backup-file>
 
+# Enhanced search
+session-cli search "keyword"
+session-cli search --after 7d
+session-cli search "meeting" --after yesterday --before today
+session-cli search --type attachment
+session-cli search --conversation "John Doe"
+session-cli search --unread-only
+
 # Run test connection
 python test_connection.py
 
@@ -204,6 +212,9 @@ python examples/backup_session.py
 - Provides generators for streaming results
 - Export conversations to JSON, CSV, HTML formats (with attachments)
 - Backup and restore functionality with AES-256 encryption
+- Enhanced search with date range, conversation, type, and sender filters
+- Helper methods for conversation and contact name/ID resolution
+- Date parsing utility supporting multiple formats (ISO, relative, Unix timestamp)
 - Dependencies: `sqlcipher3`, `pynacl`, `pyaes`
 
 ### SessionCDP (`cdp.py`)

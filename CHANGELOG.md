@@ -1,11 +1,63 @@
 # Changelog
 
-All notable changes to the Session Controller project will be documented in this file.
+All notable changes to Session Controller project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.3.0] - 2025-01-31
+
+### Added
+- Request management for contact and message requests
+- Request dataclass with properties (is_contact_request, is_message_request, is_private, is_group)
+- Database methods: `get_pending_requests()`, `get_request()`
+- CDP methods: `accept_request()`, `decline_request()`, `block_request()`
+- CLI commands: `requests`, `accept-request`, `decline-request`, `block-request`
+- Filters for requests command: `--type`, `--conversation-type`, `--unread`
+- Grouping option `--group` to organize requests by type
+- Added AGENTS.md to .gitignore and removed from git tracking
+
+### Features
+- List all pending requests (contact and message requests)
+- Accept pending requests via CLI
+- Decline requests without blocking sender
+- Block request sender and delete conversation
+- Filter requests by type (message/contact/all)
+- Filter requests by conversation type (private/group/all)
+- Filter requests by unread status
+- Group requests in output for better organization
+
+### CLI Usage Examples
+```bash
+# List all pending requests
+session-cli requests
+
+# List only message requests
+session-cli requests --type message
+
+# List only private conversation requests
+session-cli requests --conversation-type private
+
+# List only unread requests
+session-cli requests --unread
+
+# Group requests by type
+session-cli requests --group
+
+# Combine filters
+session-cli requests --type message --unread --group
+
+# Accept a request
+session-cli accept-request 05abc123...
+
+# Decline a request
+session-cli decline-request 05abc123...
+
+# Block a request
+session-cli block-request 05abc123...
+```
 
 ## [1.2.0] - 2025-01-31
 

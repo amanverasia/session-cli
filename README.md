@@ -125,6 +125,52 @@ Combine multiple filters:
 session-cli search "project" --after 30d --conversation "Team Chat" --type text --limit 50
 ```
 
+### Manage Requests
+
+List pending requests:
+
+```bash
+# Show all pending requests
+session-cli requests
+
+# Show only message requests
+session-cli requests --type message
+
+# Show only contact requests
+session-cli requests --type contact
+
+# Filter by conversation type
+session-cli requests --conversation-type private
+session-cli requests --conversation-type group
+
+# Show only unread requests
+session-cli requests --unread
+
+# Group requests by type for better organization
+session-cli requests --group
+
+# Combine filters
+session-cli requests --type message --unread --group
+```
+
+Accept a request:
+
+```bash
+session-cli accept-request 05abc123...
+```
+
+Decline a request:
+
+```bash
+session-cli decline-request 05abc123...
+```
+
+Block a request:
+
+```bash
+session-cli block-request 05abc123...
+```
+
 ### Download Media
 
 ```bash
@@ -209,6 +255,10 @@ session-backup-20260130_123456/
 | `export-all` | Export all conversations to directory |
 | `backup` | Create a full backup of Session data |
 | `restore` | Restore from backup |
+| `requests` | List pending requests (optional: --type, --conversation-type, --unread, --group) |
+| `accept-request <id>` | Accept a pending request (requires CDP) |
+| `decline-request <id>` | Decline a pending request (requires CDP) |
+| `block-request <id>` | Block and decline a request (requires CDP) |
 | `info` | Show Session information |
 
 ## Python API
@@ -244,6 +294,20 @@ with SessionDatabase() as db:
 
     # Resolve contact name to Session ID
     session_id = db.resolve_contact("Alice")
+
+    # Manage requests
+    requests = db.get_pending_requests()
+    for req in requests:
+        print(f"{req.name}: {req.type}")
+        if req.is_message_request:
+            print("  Message request")
+        if req.is_contact_request:
+            print("  Contact request")
+
+    # Get specific request
+    request = db.get_request("05abc123...")
+    if request:
+        print(f"Found request: {request.name}")
 
     # Decrypt attachment
     decrypted = db.decrypt_attachment("ab/cd/abcd1234...")
@@ -282,10 +346,15 @@ with SessionCDP(port=9222) as cdp:
     
     # Send message
     cdp.send_message("05abc123...", "Hello!")
-    
+
     # Mark as read
     cdp.mark_conversation_read("05abc123...")
-    
+
+    # Manage requests
+    cdp.accept_request("05abc123...")
+    cdp.decline_request("05abc123...")
+    cdp.block_request("05abc123...")
+
     # Get Redux state
     state = cdp.get_redux_state()
 ```

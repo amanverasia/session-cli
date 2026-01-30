@@ -188,7 +188,9 @@ def cmd_watch(args):
                                 ext = Path(att_name).suffix or _guess_extension(
                                     att_type
                                 )
-                                out_name = f"{msg.timestamp}_{sender}_{safe_name}{ext}"
+                                # Remove extension from safe_name to avoid duplicates
+                                base_name = Path(safe_name).stem
+                                out_name = f"{msg.timestamp}_{sender}_{base_name}{ext}"
                                 out_path = media_dir / out_name
 
                                 with open(out_path, "wb") as f:
@@ -290,7 +292,9 @@ def cmd_media(args):
                     # Create output filename
                     ext = Path(att_name).suffix or _guess_extension(att_type)
                     safe_name = att_name.replace("/", "_").replace("\\", "_")
-                    out_name = f"{time_str}_{sender}_{safe_name}{ext}"
+                    # Remove extension from safe_name to avoid duplicates
+                    base_name = Path(safe_name).stem
+                    out_name = f"{time_str}_{sender}_{base_name}{ext}"
                     out_path = media_dir / out_name
 
                     with open(out_path, "wb") as f:

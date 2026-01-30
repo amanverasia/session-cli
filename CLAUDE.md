@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Session CLI is a Python CLI tool and library for programmatic control of Session Desktop (privacy-focused messenger). It operates in two modes:
 
 1. **Database Mode**: Read-only direct access to Session's SQLCipher database (offline)
-2. **CDP Mode**: Full control via Chrome DevTools Protocol (requires Session running with `--remote-debugging-port=9222 --remote-allow-origins=*`)
+2. **CDP Mode**: Full control via Chrome DevTools Protocol (requires Session running with `--remote-debugging-port=9222 --remote-allow-origins="*"`)
 
 ## Build & Development Commands
 

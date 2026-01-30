@@ -37,6 +37,12 @@ pip install git+https://github.com/amanverasia/session-cli.git
 
 ## Quick Start
 
+### Check Version
+
+```bash
+session-cli --version
+```
+
 ### List Conversations
 
 ```bash
@@ -245,6 +251,7 @@ session-backup-20260130_123456/
 
 | Command | Description |
 |---------|-------------|
+| `--version`, `-v` | Show package version |
 | `list` | List all conversations |
 | `messages <id>` | Show messages from a conversation |
 | `send <id> <msg>` | Send a message (requires CDP) |

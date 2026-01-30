@@ -605,6 +605,8 @@ class SessionDatabase:
             output_path: Path to output HTML file
             include_attachments: Embed images as base64
         """
+        from datetime import datetime
+
         convo = self.get_conversation(conversation_id)
         if not convo:
             raise ValueError(f"Conversation not found: {conversation_id}")
@@ -716,8 +718,6 @@ class SessionDatabase:
     <div class="messages">
 """
         )
-
-        from datetime import datetime
 
         for msg in reversed(messages):
             direction_class = "outgoing" if msg.is_outgoing else "incoming"

@@ -531,7 +531,7 @@ class SessionDatabase:
                             if attachment_output_dir:
                                 att_dir = Path(attachment_output_dir)
                                 att_dir.mkdir(parents=True, exist_ok=True)
-                                safe_name = att.get("fileName") or "unnamed".replace(
+                                safe_name = (att.get("fileName") or "unnamed").replace(
                                     "/", "_"
                                 )
                                 out_path = att_dir / safe_name

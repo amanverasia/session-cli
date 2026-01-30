@@ -13,27 +13,16 @@ A Python CLI tool and library for programmatic control of [Session Desktop](http
 
 ## Installation
 
-### From GitHub
-
-```bash
-git clone https://github.com/amanverasia/session-cli.git
-cd session-cli
-pip install -e .
-```
-
-Or install directly with pip:
-
 ```bash
 pip install git+https://github.com/amanverasia/session-cli.git
 ```
 
-### Requirements
+This installs both the `session-cli` command and the `session_controller` Python library. All dependencies (sqlcipher3, PyNaCl, websocket-client) are installed automatically.
 
-- Python 3.10 or higher
-- Session Desktop installed
-- [sqlcipher3](https://github.com/coleifer/sqlcipher3-python)
-- [PyNaCl](https://pynacl.readthedocs.io/)
-- [websocket-client](https://github.com/websocket-client/websocket-client)
+### Prerequisites
+
+- **Python 3.10+**
+- **Session Desktop** must be installed and run at least once (to create the database)
 
 ## Quick Start
 
@@ -270,6 +259,11 @@ session-backup-20260130_123456/
 
 ## Python API
 
+Installing Session CLI also gives you the `session_controller` Python package for programmatic access. The library provides two modes of operation:
+
+- **Database Mode**: Direct read-only access to Session's SQLCipher database (works offline)
+- **CDP Mode**: Full control via Chrome DevTools Protocol (requires Session running with `--remote-debugging-port=9222`)
+
 ### Database Mode (Read-Only)
 
 ```python
@@ -414,8 +408,9 @@ The database uses SQLCipher encryption. The tool automatically:
 See the `examples/` directory for more usage examples:
 
 ```bash
-python examples/basic_usage.py
-python examples/message_watcher.py
+python examples/verify_setup.py      # Verify your setup is working
+python examples/basic_usage.py       # Basic database access
+python examples/message_watcher.py   # Real-time message monitoring
 ```
 
 ## Data Storage

@@ -1,22 +1,27 @@
 #!/usr/bin/env python3
 """
-Test script to verify Session database access works.
+Verify that Session CLI is set up correctly.
 
-Run: python test_connection.py
+This script checks:
+1. Session profiles are found
+2. Config file is readable
+3. Database encryption key is available
+4. sqlcipher is installed
+5. Database connection works
+6. Conversations can be retrieved
+
+Run: python examples/verify_setup.py
+Or after installing: python -m session_controller.examples.verify_setup
 """
 
 import sys
-import os
-
-# Add parent to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from session_controller.config import SessionConfig
 
 
 def main():
     print("=" * 60)
-    print("Session Controller - Connection Test")
+    print("Session Controller - Setup Verification")
     print("=" * 60)
 
     # Find profiles
@@ -59,12 +64,12 @@ def main():
     # Try to import sqlcipher
     print("\n5. Checking sqlcipher...")
     try:
-        from sqlcipher3 import dbapi2 as sqlite
+        from sqlcipher3 import dbapi2 as sqlite  # noqa: F401
 
         print("   sqlcipher3 is available!")
     except ImportError:
         try:
-            from pysqlcipher3 import dbapi2 as sqlite
+            from pysqlcipher3 import dbapi2 as sqlite  # noqa: F401
 
             print("   pysqlcipher3 is available!")
         except ImportError:
@@ -105,7 +110,7 @@ def main():
         return 1
 
     print("\n" + "=" * 60)
-    print("All tests passed!")
+    print("All checks passed! Session CLI is ready to use.")
     print("=" * 60)
     return 0
 

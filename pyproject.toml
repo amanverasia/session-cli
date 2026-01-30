@@ -4,8 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "session-controller"
-version = "1.3.0"
+version = "1.3.1"
 description = "Python CLI tool and library for programmatic control of Session Desktop"
+long_description = {file = "README.md"}
+long_description_content_type = "text/markdown"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
@@ -50,6 +52,7 @@ Homepage = "https://github.com/amanverasia/session-cli"
 Documentation = "https://github.com/amanverasia/session-cli#readme"
 Repository = "https://github.com/amanverasia/session-cli"
 "Bug Reports" = "https://github.com/amanverasia/session-cli/issues"
+"Source" = "https://github.com/amanverasia/session-cli"
 
 [tool.black]
 line-length = 100

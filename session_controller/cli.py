@@ -16,6 +16,7 @@ Usage:
 """
 
 import argparse
+import json
 import sys
 import os
 import time
@@ -34,8 +35,6 @@ except ImportError:
     from .database import SessionDatabase
     from .config import SessionConfig
     from .cdp import SessionCDP
-
-from pathlib import Path
 
 
 def get_version():
@@ -56,6 +55,32 @@ def get_version():
 __version__ = get_version()
 
 
+def _connect_cdp(port: int) -> SessionCDP:
+    """
+    Connect to Session CDP with error handling.
+
+    Args:
+        port: CDP port number
+
+    Returns:
+        Connected SessionCDP instance
+
+    Raises:
+        SystemExit: If connection fails
+    """
+    try:
+        cdp = SessionCDP(port=port)
+        cdp.connect()
+        return cdp
+    except Exception as e:
+        print(f"Error: Cannot connect to Session CDP at port {port}")
+        print(
+            f"Make sure Session is running with: {SessionCDP.get_launch_command(port)}"
+        )
+        print(f"\nDetails: {e}")
+        sys.exit(1)
+
+
 def cmd_list(args):
     """List all conversations."""
     config = SessionConfig(profile=args.profile)
@@ -63,8 +88,6 @@ def cmd_list(args):
         convos = db.get_conversations()
 
         if args.json:
-            import json
-
             print(json.dumps([c.raw for c in convos], indent=2))
             return
 
@@ -110,8 +133,6 @@ def cmd_messages(args):
         messages = db.get_messages(convo.id, limit=args.limit)
 
         if args.json:
-            import json
-
             print(json.dumps([m.raw for m in messages], indent=2))
             return
 
@@ -131,16 +152,7 @@ def cmd_messages(args):
 
 def cmd_send(args):
     """Send a message via CDP."""
-    try:
-        cdp = SessionCDP(port=args.port)
-        cdp.connect()
-    except Exception as e:
-        print(f"Error: Cannot connect to Session CDP at port {args.port}")
-        print(
-            f"Make sure Session is running with: {SessionCDP.get_launch_command(args.port)}"
-        )
-        print(f"\nDetails: {e}")
-        return 1
+    cdp = _connect_cdp(args.port)
 
     try:
         # Check if conversation exists
@@ -279,8 +291,6 @@ def cmd_search(args):
         results = db.search_messages_enhanced(**search_params)
 
         if args.json:
-            import json
-
             print(json.dumps([m.raw for m in results], indent=2))
             return
 
@@ -346,9 +356,7 @@ def cmd_media(args):
             (args.id, args.limit),
         )
 
-        import json as json_module
-
-        messages = [db._parse_message(json_module.loads(row[0])) for row in cursor]
+        messages = [db._parse_message(json.loads(row[0])) for row in cursor]
 
         if not messages:
             print(
@@ -572,8 +580,6 @@ def cmd_requests(args):
             requests = [r for r in requests if r.unread_count > 0]
 
         if args.json:
-            import json
-
             print(json.dumps([r.raw for r in requests], indent=2))
             return
 
@@ -636,16 +642,7 @@ def _print_request(index: int, request):
 
 def cmd_accept_request(args):
     """Accept a pending request."""
-    try:
-        cdp = SessionCDP(port=args.port)
-        cdp.connect()
-    except Exception as e:
-        print(f"Error: Cannot connect to Session CDP at port {args.port}")
-        print(
-            f"Make sure Session is running with: {SessionCDP.get_launch_command(args.port)}"
-        )
-        print(f"\nDetails: {e}")
-        return 1
+    cdp = _connect_cdp(args.port)
 
     try:
         config = SessionConfig(profile=args.profile)
@@ -668,16 +665,7 @@ def cmd_accept_request(args):
 
 def cmd_decline_request(args):
     """Decline a pending request."""
-    try:
-        cdp = SessionCDP(port=args.port)
-        cdp.connect()
-    except Exception as e:
-        print(f"Error: Cannot connect to Session CDP at port {args.port}")
-        print(
-            f"Make sure Session is running with: {SessionCDP.get_launch_command(args.port)}"
-        )
-        print(f"\nDetails: {e}")
-        return 1
+    cdp = _connect_cdp(args.port)
 
     try:
         config = SessionConfig(profile=args.profile)
@@ -700,16 +688,7 @@ def cmd_decline_request(args):
 
 def cmd_block_request(args):
     """Block a request sender."""
-    try:
-        cdp = SessionCDP(port=args.port)
-        cdp.connect()
-    except Exception as e:
-        print(f"Error: Cannot connect to Session CDP at port {args.port}")
-        print(
-            f"Make sure Session is running with: {SessionCDP.get_launch_command(args.port)}"
-        )
-        print(f"\nDetails: {e}")
-        return 1
+    cdp = _connect_cdp(args.port)
 
     try:
         config = SessionConfig(profile=args.profile)

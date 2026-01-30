@@ -880,7 +880,6 @@ class SessionDatabase:
             attachment_output_dir: Directory for attachments (default: same as output file)
         """
         from datetime import datetime
-        import json as json_module
 
         convo = self.get_conversation(conversation_id)
         if not convo:
@@ -963,7 +962,7 @@ class SessionDatabase:
             export_data["messages"].append(msg_data)
 
         with open(output_path, "w", encoding="utf-8") as f:
-            json_module.dump(export_data, f, indent=2, ensure_ascii=False)
+            json.dump(export_data, f, indent=2, ensure_ascii=False)
 
     def export_conversation_to_csv(
         self, conversation_id: str, output_path: str
@@ -1292,7 +1291,6 @@ class SessionDatabase:
         from datetime import datetime
         import shutil
         import hashlib
-        import json as json_module
 
         backup_dir = Path(output_path)
         backup_dir.mkdir(parents=True, exist_ok=True)
@@ -1327,7 +1325,7 @@ class SessionDatabase:
 
             metadata_path = backup_path / "metadata.json"
             with open(metadata_path, "w", encoding="utf-8") as f:
-                json_module.dump(metadata, f, indent=2)
+                json.dump(metadata, f, indent=2)
 
             checksum_path = backup_path / "checksum.txt"
             with open(checksum_path, "w", encoding="utf-8") as f:
@@ -1418,7 +1416,6 @@ class SessionDatabase:
         """
         from pathlib import Path
         from datetime import datetime
-        import json as json_module
 
         backup_dir = Path(output_path)
         backup_dir.mkdir(parents=True, exist_ok=True)
@@ -1440,7 +1437,7 @@ class SessionDatabase:
 
             messages_path = backup_path / "messages.json"
             with open(messages_path, "w", encoding="utf-8") as f:
-                json_module.dump([msg.raw for msg in messages], f, indent=2)
+                json.dump([msg.raw for msg in messages], f, indent=2)
 
             attachments_dir = backup_path / "attachments"
             if include_attachments and new_attachment_paths:
@@ -1468,7 +1465,7 @@ class SessionDatabase:
 
             metadata_path = backup_path / "metadata.json"
             with open(metadata_path, "w", encoding="utf-8") as f:
-                json_module.dump(metadata, f, indent=2)
+                json.dump(metadata, f, indent=2)
 
             return {**metadata, "backup_path": str(backup_path)}
 
@@ -1493,7 +1490,6 @@ class SessionDatabase:
         """
         import shutil
         import zipfile
-        import json as json_module
         from pathlib import Path
 
         backup = Path(backup_path)
@@ -1566,7 +1562,7 @@ class SessionDatabase:
                 raise FileNotFoundError("Invalid backup: metadata.json not found")
 
             with open(metadata_path) as f:
-                metadata = json_module.load(f)
+                metadata = json.load(f)
 
             print(f"Restoring backup from: {metadata['created_at']}")
             print(f"Session ID: {metadata.get('session_id', 'unknown')}")

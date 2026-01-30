@@ -256,8 +256,8 @@ class SessionCDP:
                     throw new Error('Conversation not found');
                 }}
                 // Accept the request by setting isApproved to true
-                convo.set('isApproved', true);
-                await convo.save();
+                convo.isApproved = true;
+                await convo.commit();
                 return true;
             }})()
         """)
@@ -281,7 +281,7 @@ class SessionCDP:
                     throw new Error('Conversation not found');
                 }}
                 // Delete the conversation (decline the request)
-                await convo.destroy();
+                await convo.deleteConversation();
                 return true;
             }})()
         """)
@@ -304,10 +304,10 @@ class SessionCDP:
                 if (!convo) {{
                     throw new Error('Conversation not found');
                 }}
-                // Block the user
-                await convo.block();
-                // Delete the conversation
-                await convo.destroy();
+                // Block the user and delete the conversation
+                await convo.deleteConversation();
+                // Add to blocked list
+                await window.textsecure.storage.protocol.addBlockedNumber('{request_id}');
                 return true;
             }})()
         """)

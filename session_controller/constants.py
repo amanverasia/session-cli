@@ -84,6 +84,37 @@ class SQLQueries:
     # Settings
     GET_SETTING = "SELECT json FROM items WHERE id = ?"
 
+    # Contact resolution
+    SEARCH_CONTACT_BY_NAME = """
+        SELECT source
+        FROM messages
+        WHERE JSON_EXTRACT(json, '$.source') LIKE ?
+        GROUP BY source
+        LIMIT 1
+    """
+
+    GET_CONVERSATION_BY_DISPLAY_NAME = """
+        SELECT id
+        FROM conversations
+        WHERE displayNameInProfile = ?
+        OR nickname = ?
+    """
+
+    # Messages
+    GET_MESSAGES_BY_CONVERSATION = """
+        SELECT json FROM messages
+        WHERE conversationId = ?
+        ORDER BY sent_at DESC
+        LIMIT ?
+    """
+
+    GET_MESSAGES_BY_CONVERSATION_BEFORE = """
+        SELECT json FROM messages
+        WHERE conversationId = ? AND sent_at < ?
+        ORDER BY sent_at DESC
+        LIMIT ?
+    """
+
 
 # === CDP Configuration ===
 DEFAULT_CDP_PORT: Final = 9222

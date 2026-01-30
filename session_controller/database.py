@@ -234,15 +234,7 @@ class SessionDatabase:
             List of Request objects
         """
         conn = self._get_connection()
-        cursor = conn.execute("""
-            SELECT id, type, active_at, displayNameInProfile, nickname,
-                   lastMessage, unreadCount, isApproved, didApproveMe,
-                   avatarInProfile
-            FROM conversations
-            WHERE (isApproved = 0 OR isApproved IS NULL)
-            AND active_at > 0
-            ORDER BY active_at DESC
-        """)
+        cursor = conn.execute(SQLQueries.GET_PENDING_REQUESTS)
 
         requests = []
         for row in cursor:
@@ -326,14 +318,7 @@ class SessionDatabase:
     def get_conversations(self) -> list[Conversation]:
         """Get all conversations."""
         conn = self._get_connection()
-        cursor = conn.execute("""
-            SELECT id, type, active_at, displayNameInProfile, nickname,
-                   lastMessage, unreadCount, members, groupAdmins,
-                   isApproved, didApproveMe, avatarInProfile
-            FROM conversations
-            WHERE active_at > 0
-            ORDER BY active_at DESC
-        """)
+        cursor = conn.execute(SQLQueries.GET_CONVERSATIONS)
 
         conversations = []
         for row in cursor:
@@ -466,13 +451,7 @@ class SessionDatabase:
         # Search by display name in conversations
         conn = self._get_connection()
         cursor = conn.execute(
-            """
-            SELECT source
-            FROM messages
-            WHERE JSON_EXTRACT(json, '$.source') LIKE ?
-            GROUP BY source
-            LIMIT 1
-        """,
+            SQLQueries.SEARCH_CONTACT_BY_NAME,
             (f"%{search}%",),
         )
         row = cursor.fetchone()
@@ -516,22 +495,12 @@ class SessionDatabase:
 
         if before_timestamp:
             cursor = conn.execute(
-                """
-                SELECT json FROM messages
-                WHERE conversationId = ? AND sent_at < ?
-                ORDER BY sent_at DESC
-                LIMIT ?
-            """,
+                SQLQueries.GET_MESSAGES_BY_CONVERSATION_BEFORE,
                 (conversation_id, before_timestamp, limit),
             )
         else:
             cursor = conn.execute(
-                """
-                SELECT json FROM messages
-                WHERE conversationId = ?
-                ORDER BY sent_at DESC
-                LIMIT ?
-            """,
+                SQLQueries.GET_MESSAGES_BY_CONVERSATION,
                 (conversation_id, limit),
             )
 

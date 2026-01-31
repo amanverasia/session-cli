@@ -1,5 +1,0 @@
-#!/bin/bash
-# Session Controller CLI wrapper
-# Usage: ./session-cli <command> [args]
-
-python3 -m session_controller.cli "$@"

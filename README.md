@@ -1,4 +1,8 @@
-# Session Controller
+# Session CLI
+
+[![PyPI version](https://img.shields.io/pypi/v/session-cli.svg)](https://pypi.org/project/session-cli/)
+[![Python versions](https://img.shields.io/pypi/pyversions/session-cli.svg)](https://pypi.org/project/session-cli/)
+[![License](https://img.shields.io/pypi/l/session-cli.svg)](https://github.com/amanverasia/session-cli/blob/main/LICENSE)
 
 A Python CLI tool and library for programmatic control of [Session Desktop](https://getsession.org/), the privacy-focused messaging application.
 
@@ -6,10 +10,11 @@ A Python CLI tool and library for programmatic control of [Session Desktop](http
 
 - **Database Access**: Read messages, conversations, and attachments directly from Session's SQLCipher database
 - **CDP Control**: Send messages and control Session via Chrome DevTools Protocol
-- **Group Management**: Create groups, add/remove members, promote/demote admins
+- **Group Management**: Add/remove members, promote/demote admins, leave groups
 - **Real-time Monitoring**: Watch for new messages in real-time
 - **Full-text Search**: Search across all messages using FTS5
 - **Attachment Support**: Decrypt and download encrypted attachments
+- **Statistics**: View messaging stats, activity patterns, and top conversations
 - **Interactive REPL**: Persistent session with tab completion
 - **User Config**: Save defaults in `~/.config/session-cli/config.yaml`
 - **Cross-platform**: Works on macOS and Linux
@@ -17,7 +22,7 @@ A Python CLI tool and library for programmatic control of [Session Desktop](http
 ## Installation
 
 ```bash
-pip install git+https://github.com/amanverasia/session-cli.git
+pip install session-cli
 ```
 
 This installs both the `session-cli` command and the `session_controller` Python library. All dependencies (sqlcipher3, PyNaCl, websocket-client) are installed automatically.

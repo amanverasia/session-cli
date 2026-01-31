@@ -128,6 +128,15 @@ dmypy.json
 # Test artifacts
 test_media/
 
+# Build artifacts
+dist/
+build/
+*.egg-info/
+session_cli.egg-info/
+
+# Claude
+.claude/
+
 # IDE
 .vscode/
 .idea/

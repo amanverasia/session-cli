@@ -408,6 +408,245 @@ class SessionREPL(cmd.Cmd):
             print(f"Error: {e}")
         return False
 
+    # === Group Management Commands ===
+
+    def do_group(self, arg: str) -> bool:
+        """
+        Group management commands. Usage: group <command> [args]
+
+        Commands:
+          members <id>              - List group members and admins
+          add <id> <session_id>     - Add member to group
+          remove <id> <session_id>  - Remove member from group
+          promote <id> <session_id> - Promote member to admin
+          demote <id> <session_id>  - Demote admin to member
+          leave <id>                - Leave a group
+          create <name> <ids...>    - Create new group
+          rename <id> <name>        - Rename a group
+        """
+        args = shlex.split(arg) if arg else []
+        if not args:
+            print("Usage: group <command> [args]")
+            print("Commands: members, add, remove, promote, demote, leave, create, rename")
+            print("Type 'help group' for details.")
+            return False
+
+        subcmd = args[0].lower()
+        subargs = args[1:]
+
+        if subcmd == "members":
+            return self._group_members(subargs)
+        elif subcmd == "add":
+            return self._group_add(subargs)
+        elif subcmd == "remove":
+            return self._group_remove(subargs)
+        elif subcmd == "promote":
+            return self._group_promote(subargs)
+        elif subcmd == "demote":
+            return self._group_demote(subargs)
+        elif subcmd == "leave":
+            return self._group_leave(subargs)
+        elif subcmd == "create":
+            return self._group_create(subargs)
+        elif subcmd == "rename":
+            return self._group_rename(subargs)
+        else:
+            print(f"Unknown group command: {subcmd}")
+            print("Commands: members, add, remove, promote, demote, leave, create, rename")
+            return False
+
+    def _group_members(self, args: list[str]) -> bool:
+        """List group members."""
+        if not args:
+            print("Usage: group members <group_id>")
+            return False
+
+        group_id = args[0]
+        try:
+            result = self.cdp.get_group_members(group_id)
+            if not result:
+                print(f"Group not found or not a group: {group_id}")
+                return False
+
+            if self.json_output:
+                print(json.dumps(result, indent=2))
+                return False
+
+            print(f"Group: {result['name']}")
+            print(f"ID: {result['id']}")
+            print(f"You are admin: {'Yes' if result['weAreAdmin'] else 'No'}")
+            print()
+
+            print(f"Admins ({len(result['admins'])}):")
+            for admin in result['admins']:
+                print(f"  * {admin}")
+
+            print(f"\nMembers ({len(result['members'])}):")
+            for member in result['members']:
+                is_admin = " (admin)" if member in result['admins'] else ""
+                print(f"  - {member}{is_admin}")
+
+        except Exception as e:
+            print(f"Error: {e}")
+        return False
+
+    def _group_add(self, args: list[str]) -> bool:
+        """Add member to group."""
+        if len(args) < 2:
+            print("Usage: group add <group_id> <session_id>")
+            return False
+
+        group_id, session_id = args[0], args[1]
+        try:
+            print(f"Adding {session_id} to group...")
+            result = self.cdp.add_group_member(group_id, session_id)
+            if result:
+                print(f"Added {session_id} to group")
+            else:
+                print("Failed to add member")
+        except Exception as e:
+            print(f"Error: {e}")
+        return False
+
+    def _group_remove(self, args: list[str]) -> bool:
+        """Remove member from group."""
+        if len(args) < 2:
+            print("Usage: group remove <group_id> <session_id>")
+            return False
+
+        group_id, session_id = args[0], args[1]
+        try:
+            print(f"Removing {session_id} from group...")
+            result = self.cdp.remove_group_member(group_id, session_id)
+            if result:
+                print(f"Removed {session_id} from group")
+            else:
+                print("Failed to remove member")
+        except Exception as e:
+            print(f"Error: {e}")
+        return False
+
+    def _group_promote(self, args: list[str]) -> bool:
+        """Promote member to admin."""
+        if len(args) < 2:
+            print("Usage: group promote <group_id> <session_id>")
+            return False
+
+        group_id, session_id = args[0], args[1]
+        try:
+            print(f"Promoting {session_id} to admin...")
+            result = self.cdp.promote_to_admin(group_id, session_id)
+            if result:
+                print(f"Promoted {session_id} to admin")
+            else:
+                print("Failed to promote member")
+        except Exception as e:
+            print(f"Error: {e}")
+        return False
+
+    def _group_demote(self, args: list[str]) -> bool:
+        """Demote admin to member."""
+        if len(args) < 2:
+            print("Usage: group demote <group_id> <session_id>")
+            return False
+
+        group_id, session_id = args[0], args[1]
+        try:
+            print(f"Demoting {session_id} from admin...")
+            result = self.cdp.demote_admin(group_id, session_id)
+            if result:
+                print(f"Demoted {session_id} from admin")
+            else:
+                print("Failed to demote admin")
+        except Exception as e:
+            print(f"Error: {e}")
+        return False
+
+    def _group_leave(self, args: list[str]) -> bool:
+        """Leave a group."""
+        if not args:
+            print("Usage: group leave <group_id>")
+            return False
+
+        group_id = args[0]
+        try:
+            # Get group info first
+            info = self.cdp.get_group_members(group_id)
+            if not info:
+                print(f"Group not found: {group_id}")
+                return False
+
+            group_name = info['name']
+            confirm = input(f"Leave group '{group_name}'? [y/N] ")
+            if confirm.lower() != 'y':
+                print("Cancelled.")
+                return False
+
+            print(f"Leaving group '{group_name}'...")
+            result = self.cdp.leave_group(group_id)
+            if result:
+                print(f"Left group '{group_name}'")
+            else:
+                print("Failed to leave group")
+        except Exception as e:
+            print(f"Error: {e}")
+        return False
+
+    def _group_create(self, args: list[str]) -> bool:
+        """Create a new group."""
+        if len(args) < 2:
+            print("Usage: group create <name> <session_id> [session_id...]")
+            return False
+
+        name = args[0]
+        members = args[1:]
+        try:
+            print(f"Creating group '{name}' with {len(members)} member(s)...")
+            group_id = self.cdp.create_group(name, members)
+            if group_id:
+                print(f"Created group '{name}'")
+                print(f"Group ID: {group_id}")
+            else:
+                print("Failed to create group")
+        except Exception as e:
+            print(f"Error: {e}")
+        return False
+
+    def _group_rename(self, args: list[str]) -> bool:
+        """Rename a group."""
+        if len(args) < 2:
+            print("Usage: group rename <group_id> <new_name>")
+            return False
+
+        group_id = args[0]
+        new_name = " ".join(args[1:])  # Allow spaces in name
+        try:
+            # Get current info
+            info = self.cdp.get_group_members(group_id)
+            if not info:
+                print(f"Group not found: {group_id}")
+                return False
+
+            old_name = info['name']
+            print(f"Renaming group '{old_name}' to '{new_name}'...")
+            result = self.cdp.rename_group(group_id, new_name)
+            if result:
+                print(f"Renamed group to '{new_name}'")
+            else:
+                print("Failed to rename group")
+        except Exception as e:
+            print(f"Error: {e}")
+        return False
+
+    def complete_group(self, text: str, line: str, begidx: int, endidx: int) -> list[str]:
+        """Tab completion for group command."""
+        parts = line.split()
+        if len(parts) <= 2:
+            # Complete subcommand
+            subcmds = ["members", "add", "remove", "promote", "demote", "leave", "create", "rename"]
+            return [s for s in subcmds if s.startswith(text.lower())]
+        return []
+
     def do_quit(self, arg: str) -> bool:
         """Exit the REPL. Usage: quit"""
         return self.do_exit(arg)

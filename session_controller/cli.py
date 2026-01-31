@@ -745,6 +745,203 @@ def cmd_repl(args, user_config: UserConfig):
     repl.run()
 
 
+# === Group Management Commands ===
+
+
+def cmd_group_members(args):
+    """List group members and admins."""
+    cdp = _connect_cdp(args.port)
+
+    try:
+        result = cdp.get_group_members(args.id)
+        if not result:
+            print(f"Group not found or not a group: {args.id}")
+            return 1
+
+        if args.json:
+            print(json.dumps(result, indent=2))
+            return
+
+        print(f"Group: {result['name']}")
+        print(f"ID: {result['id']}")
+        print(f"Type: {result['type']}")
+        print(f"You are admin: {'Yes' if result['weAreAdmin'] else 'No'}")
+        print()
+
+        print(f"Admins ({len(result['admins'])}):")
+        for admin in result['admins']:
+            print(f"  * {admin}")
+
+        print(f"\nMembers ({len(result['members'])}):")
+        for member in result['members']:
+            is_admin = " (admin)" if member in result['admins'] else ""
+            print(f"  - {member}{is_admin}")
+
+    finally:
+        cdp.close()
+
+
+def cmd_group_add(args):
+    """Add a member to a group."""
+    cdp = _connect_cdp(args.port)
+
+    try:
+        print(f"Adding {args.session_id} to group...")
+        result = cdp.add_group_member(args.id, args.session_id)
+        if result:
+            print(f"✓ Added {args.session_id} to group")
+        else:
+            print("✗ Failed to add member")
+            return 1
+    except RuntimeError as e:
+        print(f"✗ Error: {e}")
+        return 1
+    finally:
+        cdp.close()
+
+
+def cmd_group_remove(args):
+    """Remove a member from a group."""
+    cdp = _connect_cdp(args.port)
+
+    try:
+        print(f"Removing {args.session_id} from group...")
+        result = cdp.remove_group_member(args.id, args.session_id)
+        if result:
+            print(f"✓ Removed {args.session_id} from group")
+        else:
+            print("✗ Failed to remove member")
+            return 1
+    except RuntimeError as e:
+        print(f"✗ Error: {e}")
+        return 1
+    finally:
+        cdp.close()
+
+
+def cmd_group_promote(args):
+    """Promote a member to admin."""
+    cdp = _connect_cdp(args.port)
+
+    try:
+        print(f"Promoting {args.session_id} to admin...")
+        result = cdp.promote_to_admin(args.id, args.session_id)
+        if result:
+            print(f"✓ Promoted {args.session_id} to admin")
+        else:
+            print("✗ Failed to promote member")
+            return 1
+    except RuntimeError as e:
+        print(f"✗ Error: {e}")
+        return 1
+    finally:
+        cdp.close()
+
+
+def cmd_group_demote(args):
+    """Demote an admin to regular member."""
+    cdp = _connect_cdp(args.port)
+
+    try:
+        print(f"Demoting {args.session_id} from admin...")
+        result = cdp.demote_admin(args.id, args.session_id)
+        if result:
+            print(f"✓ Demoted {args.session_id} from admin")
+        else:
+            print("✗ Failed to demote admin")
+            return 1
+    except RuntimeError as e:
+        print(f"✗ Error: {e}")
+        return 1
+    finally:
+        cdp.close()
+
+
+def cmd_group_leave(args):
+    """Leave a group."""
+    cdp = _connect_cdp(args.port)
+
+    try:
+        # Get group info first
+        info = cdp.get_group_members(args.id)
+        if not info:
+            print(f"Group not found: {args.id}")
+            return 1
+
+        group_name = info['name']
+
+        if not args.yes:
+            confirm = input(f"Leave group '{group_name}'? [y/N] ")
+            if confirm.lower() != 'y':
+                print("Cancelled.")
+                return 0
+
+        print(f"Leaving group '{group_name}'...")
+        result = cdp.leave_group(args.id)
+        if result:
+            print(f"✓ Left group '{group_name}'")
+        else:
+            print("✗ Failed to leave group")
+            return 1
+    except RuntimeError as e:
+        print(f"✗ Error: {e}")
+        return 1
+    finally:
+        cdp.close()
+
+
+def cmd_group_create(args):
+    """Create a new group."""
+    cdp = _connect_cdp(args.port)
+
+    try:
+        members = args.members
+        print(f"Creating group '{args.name}' with {len(members)} member(s)...")
+
+        group_id = cdp.create_group(args.name, members)
+        if group_id:
+            print(f"✓ Created group '{args.name}'")
+            print(f"  Group ID: {group_id}")
+
+            if args.json:
+                print(json.dumps({"id": group_id, "name": args.name, "members": members}, indent=2))
+        else:
+            print("✗ Failed to create group")
+            return 1
+    except RuntimeError as e:
+        print(f"✗ Error: {e}")
+        return 1
+    finally:
+        cdp.close()
+
+
+def cmd_group_rename(args):
+    """Rename a group."""
+    cdp = _connect_cdp(args.port)
+
+    try:
+        # Get current group info
+        info = cdp.get_group_members(args.id)
+        if not info:
+            print(f"Group not found: {args.id}")
+            return 1
+
+        old_name = info['name']
+        print(f"Renaming group '{old_name}' to '{args.name}'...")
+
+        result = cdp.rename_group(args.id, args.name)
+        if result:
+            print(f"✓ Renamed group to '{args.name}'")
+        else:
+            print("✗ Failed to rename group")
+            return 1
+    except RuntimeError as e:
+        print(f"✗ Error: {e}")
+        return 1
+    finally:
+        cdp.close()
+
+
 def main():
     # Load user configuration
     user_config = UserConfig.load()
@@ -761,10 +958,19 @@ def main():
   session-cli search "keyword"              # Search messages
   session-cli export 05abc... -o convo.json  # Export conversation
   session-cli backup -o ./backups           # Create backup
-  session-cli requests                     # List pending requests
-  session-cli accept-request 05abc...      # Accept a request
-  session-cli block-request 05abc...       # Block a request
+  session-cli requests                      # List pending requests
+  session-cli accept-request 05abc...       # Accept a request
   session-cli repl                          # Interactive REPL mode
+
+ Group Management:
+  session-cli group members <id>            # List group members
+  session-cli group add <id> <session_id>   # Add member to group
+  session-cli group remove <id> <session_id>  # Remove member
+  session-cli group promote <id> <session_id> # Promote to admin
+  session-cli group demote <id> <session_id>  # Demote admin
+  session-cli group leave <id>              # Leave a group
+  session-cli group create "Name" <ids...>  # Create new group
+  session-cli group rename <id> "New Name"  # Rename group
         """,
     )
     parser.add_argument(
@@ -995,6 +1201,79 @@ def main():
     block_parser.add_argument("id", help="Request ID (Session ID or conversation ID)")
     block_parser.set_defaults(func=cmd_block_request)
 
+    # group - with nested subcommands
+    group_parser = subparsers.add_parser(
+        "group", help="Group management commands"
+    )
+    group_subparsers = group_parser.add_subparsers(dest="group_command", help="Group command")
+
+    # group members
+    group_members_parser = group_subparsers.add_parser(
+        "members", help="List group members and admins"
+    )
+    group_members_parser.add_argument("id", help="Group ID")
+    group_members_parser.set_defaults(func=cmd_group_members)
+
+    # group add
+    group_add_parser = group_subparsers.add_parser(
+        "add", help="Add a member to a group"
+    )
+    group_add_parser.add_argument("id", help="Group ID")
+    group_add_parser.add_argument("session_id", help="Session ID of user to add")
+    group_add_parser.set_defaults(func=cmd_group_add)
+
+    # group remove
+    group_remove_parser = group_subparsers.add_parser(
+        "remove", help="Remove a member from a group"
+    )
+    group_remove_parser.add_argument("id", help="Group ID")
+    group_remove_parser.add_argument("session_id", help="Session ID of user to remove")
+    group_remove_parser.set_defaults(func=cmd_group_remove)
+
+    # group promote
+    group_promote_parser = group_subparsers.add_parser(
+        "promote", help="Promote a member to admin"
+    )
+    group_promote_parser.add_argument("id", help="Group ID")
+    group_promote_parser.add_argument("session_id", help="Session ID of user to promote")
+    group_promote_parser.set_defaults(func=cmd_group_promote)
+
+    # group demote
+    group_demote_parser = group_subparsers.add_parser(
+        "demote", help="Demote an admin to regular member"
+    )
+    group_demote_parser.add_argument("id", help="Group ID")
+    group_demote_parser.add_argument("session_id", help="Session ID of admin to demote")
+    group_demote_parser.set_defaults(func=cmd_group_demote)
+
+    # group leave
+    group_leave_parser = group_subparsers.add_parser(
+        "leave", help="Leave a group"
+    )
+    group_leave_parser.add_argument("id", help="Group ID")
+    group_leave_parser.add_argument(
+        "--yes", "-y", action="store_true", help="Skip confirmation"
+    )
+    group_leave_parser.set_defaults(func=cmd_group_leave)
+
+    # group create
+    group_create_parser = group_subparsers.add_parser(
+        "create", help="Create a new group"
+    )
+    group_create_parser.add_argument("name", help="Name for the new group")
+    group_create_parser.add_argument(
+        "members", nargs="+", help="Session IDs of members to add"
+    )
+    group_create_parser.set_defaults(func=cmd_group_create)
+
+    # group rename
+    group_rename_parser = group_subparsers.add_parser(
+        "rename", help="Rename a group"
+    )
+    group_rename_parser.add_argument("id", help="Group ID")
+    group_rename_parser.add_argument("name", help="New name for the group")
+    group_rename_parser.set_defaults(func=cmd_group_rename)
+
     # repl / interactive
     repl_parser = subparsers.add_parser(
         "repl", aliases=["interactive"], help="Start interactive REPL mode"
@@ -1009,6 +1288,11 @@ def main():
 
     if not args.command:
         parser.print_help()
+        return 1
+
+    # Handle group command without subcommand
+    if args.command == "group" and not getattr(args, "group_command", None):
+        group_parser.print_help()
         return 1
 
     return args.func(args) or 0

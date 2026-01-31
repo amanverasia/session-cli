@@ -30,11 +30,15 @@ try:
     from .cdp import SessionCDP
     from .database import SessionDatabase
     from .exceptions import CDPError, SessionError
+    from .user_config import UserConfig
+    from .repl import SessionREPL
 except ImportError:
     from config import SessionConfig
     from cdp import SessionCDP
     from database import SessionDatabase
     from exceptions import CDPError, SessionError
+    from user_config import UserConfig
+    from repl import SessionREPL
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -730,7 +734,21 @@ def cmd_block_request(args):
         cdp.close()
 
 
+def cmd_repl(args, user_config: UserConfig):
+    """Start interactive REPL mode."""
+    repl = SessionREPL(
+        profile=args.profile,
+        port=args.port,
+        json_output=args.json,
+        user_config=user_config,
+    )
+    repl.run()
+
+
 def main():
+    # Load user configuration
+    user_config = UserConfig.load()
+
     parser = argparse.ArgumentParser(
         description="Session Desktop Controller",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -746,6 +764,7 @@ def main():
   session-cli requests                     # List pending requests
   session-cli accept-request 05abc...      # Accept a request
   session-cli block-request 05abc...       # Block a request
+  session-cli repl                          # Interactive REPL mode
         """,
     )
     parser.add_argument(
@@ -758,6 +777,13 @@ def main():
         "--port", type=int, default=9222, help="CDP port (default: 9222)"
     )
     parser.add_argument("--json", "-j", action="store_true", help="Output as JSON")
+
+    # Apply user config defaults (CLI args will override these)
+    parser.set_defaults(
+        profile=user_config.profile,
+        port=user_config.port,
+        json=user_config.json_output,
+    )
 
     subparsers = parser.add_subparsers(dest="command", help="Command")
 
@@ -968,6 +994,12 @@ def main():
     )
     block_parser.add_argument("id", help="Request ID (Session ID or conversation ID)")
     block_parser.set_defaults(func=cmd_block_request)
+
+    # repl / interactive
+    repl_parser = subparsers.add_parser(
+        "repl", aliases=["interactive"], help="Start interactive REPL mode"
+    )
+    repl_parser.set_defaults(func=lambda args: cmd_repl(args, user_config))
 
     args = parser.parse_args()
 

@@ -41,11 +41,15 @@ __license__ = "MIT"
 from .database import SessionDatabase, Message, Conversation, Request
 from .cdp import SessionCDP
 from .config import SessionConfig
+from .user_config import UserConfig
+from .repl import SessionREPL
 
 __all__ = [
     "SessionDatabase",
     "SessionCDP",
     "SessionConfig",
+    "UserConfig",
+    "SessionREPL",
     "Message",
     "Conversation",
     "Request",

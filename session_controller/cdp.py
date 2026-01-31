@@ -441,32 +441,13 @@ class SessionCDP:
                 const type = convo.get('type');
                 if (type !== 'group' && type !== 'groupv2') throw new Error('Not a group');
 
-                // Get our Session ID safely
-                let ourId = null;
-                try {{
-                    if (window.textsecure && window.textsecure.storage && window.textsecure.storage.user) {{
-                        ourId = window.textsecure.storage.user.getNumber();
-                    }}
-                }} catch(e) {{}}
-                if (!ourId) {{
-                    try {{
-                        const state = window.inboxStore.getState();
-                        if (state && state.user && state.user.ourNumber) {{
-                            ourId = state.user.ourNumber;
-                        }}
-                    }} catch(e) {{}}
+                // Try to add member - Session will enforce permissions
+                if (typeof convo.addMembers === 'function') {{
+                    await convo.addMembers(['{session_id}']);
+                    return true;
                 }}
 
-                // Check if we're admin
-                const admins = convo.get('groupAdmins') || [];
-                if (!ourId || !admins.includes(ourId)) throw new Error('You must be an admin to add members');
-
-                // Add the member
-                const members = convo.get('members') || [];
-                if (members.includes('{session_id}')) throw new Error('User is already a member');
-
-                await convo.addMembers(['{session_id}']);
-                return true;
+                throw new Error('No method found to add members');
             }})()
         """)
         return result is True
@@ -489,28 +470,13 @@ class SessionCDP:
                 const type = convo.get('type');
                 if (type !== 'group' && type !== 'groupv2') throw new Error('Not a group');
 
-                // Get our Session ID safely
-                let ourId = null;
-                try {{
-                    if (window.textsecure && window.textsecure.storage && window.textsecure.storage.user) {{
-                        ourId = window.textsecure.storage.user.getNumber();
-                    }}
-                }} catch(e) {{}}
-                if (!ourId) {{
-                    try {{
-                        const state = window.inboxStore.getState();
-                        if (state && state.user && state.user.ourNumber) {{
-                            ourId = state.user.ourNumber;
-                        }}
-                    }} catch(e) {{}}
+                // Try to remove member - Session will enforce permissions
+                if (typeof convo.removeMembers === 'function') {{
+                    await convo.removeMembers(['{session_id}']);
+                    return true;
                 }}
 
-                // Check if we're admin
-                const admins = convo.get('groupAdmins') || [];
-                if (!ourId || !admins.includes(ourId)) throw new Error('You must be an admin to remove members');
-
-                await convo.removeMembers(['{session_id}']);
-                return true;
+                throw new Error('No method found to remove members');
             }})()
         """)
         return result is True
@@ -533,35 +499,13 @@ class SessionCDP:
                 const type = convo.get('type');
                 if (type !== 'group' && type !== 'groupv2') throw new Error('Not a group');
 
-                // Get our Session ID safely
-                let ourId = null;
-                try {{
-                    if (window.textsecure && window.textsecure.storage && window.textsecure.storage.user) {{
-                        ourId = window.textsecure.storage.user.getNumber();
-                    }}
-                }} catch(e) {{}}
-                if (!ourId) {{
-                    try {{
-                        const state = window.inboxStore.getState();
-                        if (state && state.user && state.user.ourNumber) {{
-                            ourId = state.user.ourNumber;
-                        }}
-                    }} catch(e) {{}}
+                // Try to promote - Session will enforce permissions
+                if (typeof convo.addAdmin === 'function') {{
+                    await convo.addAdmin('{session_id}');
+                    return true;
                 }}
 
-                // Check if we're admin
-                const admins = convo.get('groupAdmins') || [];
-                if (!ourId || !admins.includes(ourId)) throw new Error('You must be an admin to promote members');
-
-                // Check if user is a member
-                const members = convo.get('members') || [];
-                if (!members.includes('{session_id}')) throw new Error('User is not a member of this group');
-
-                // Check if already admin
-                if (admins.includes('{session_id}')) throw new Error('User is already an admin');
-
-                await convo.addAdmin('{session_id}');
-                return true;
+                throw new Error('No method found to promote members');
             }})()
         """)
         return result is True
@@ -584,31 +528,13 @@ class SessionCDP:
                 const type = convo.get('type');
                 if (type !== 'group' && type !== 'groupv2') throw new Error('Not a group');
 
-                // Get our Session ID safely
-                let ourId = null;
-                try {{
-                    if (window.textsecure && window.textsecure.storage && window.textsecure.storage.user) {{
-                        ourId = window.textsecure.storage.user.getNumber();
-                    }}
-                }} catch(e) {{}}
-                if (!ourId) {{
-                    try {{
-                        const state = window.inboxStore.getState();
-                        if (state && state.user && state.user.ourNumber) {{
-                            ourId = state.user.ourNumber;
-                        }}
-                    }} catch(e) {{}}
+                // Try to demote - Session will enforce permissions
+                if (typeof convo.removeAdmin === 'function') {{
+                    await convo.removeAdmin('{session_id}');
+                    return true;
                 }}
 
-                // Check if we're admin
-                const admins = convo.get('groupAdmins') || [];
-                if (!ourId || !admins.includes(ourId)) throw new Error('You must be an admin to demote members');
-
-                // Check if user is admin
-                if (!admins.includes('{session_id}')) throw new Error('User is not an admin');
-
-                await convo.removeAdmin('{session_id}');
-                return true;
+                throw new Error('No method found to demote admins');
             }})()
         """)
         return result is True
@@ -679,28 +605,24 @@ class SessionCDP:
                 const type = convo.get('type');
                 if (type !== 'group' && type !== 'groupv2') throw new Error('Not a group');
 
-                // Get our Session ID safely
-                let ourId = null;
-                try {{
-                    if (window.textsecure && window.textsecure.storage && window.textsecure.storage.user) {{
-                        ourId = window.textsecure.storage.user.getNumber();
-                    }}
-                }} catch(e) {{}}
-                if (!ourId) {{
-                    try {{
-                        const state = window.inboxStore.getState();
-                        if (state && state.user && state.user.ourNumber) {{
-                            ourId = state.user.ourNumber;
-                        }}
-                    }} catch(e) {{}}
+                // Try to rename - Session will enforce permissions
+                if (typeof convo.setGroupName === 'function') {{
+                    await convo.setGroupName({name_escaped});
+                    return true;
                 }}
 
-                // Check if we're admin
-                const admins = convo.get('groupAdmins') || [];
-                if (!ourId || !admins.includes(ourId)) throw new Error('You must be an admin to rename the group');
+                // Try alternative methods
+                if (typeof convo.updateGroupName === 'function') {{
+                    await convo.updateGroupName({name_escaped});
+                    return true;
+                }}
 
-                await convo.setGroupName({name_escaped});
-                return true;
+                if (typeof convo.setName === 'function') {{
+                    await convo.setName({name_escaped});
+                    return true;
+                }}
+
+                throw new Error('No method found to rename group');
             }})()
         """)
         return result is True

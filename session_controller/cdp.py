@@ -310,6 +310,249 @@ class SessionCDP:
         """)
         return result is True
 
+    # === Group Management ===
+
+    def get_group_members(self, group_id: str) -> Optional[dict]:
+        """
+        Get members and admins of a group.
+
+        Args:
+            group_id: The group conversation ID
+
+        Returns:
+            Dict with 'members' and 'admins' lists, or None if not a group
+        """
+        return self.evaluate(f"""
+            (function() {{
+                const convo = window.getConversationController().get('{group_id}');
+                if (!convo) return null;
+                const type = convo.get('type');
+                if (type !== 'group' && type !== 'groupv2') return null;
+                return {{
+                    id: convo.id,
+                    name: convo.get('displayNameInProfile') || convo.get('name') || 'Unknown Group',
+                    type: type,
+                    members: convo.get('members') || [],
+                    admins: convo.get('groupAdmins') || [],
+                    weAreAdmin: (convo.get('groupAdmins') || []).includes(
+                        window.textsecure.storage.user.getNumber()
+                    )
+                }};
+            }})()
+        """)
+
+    def add_group_member(self, group_id: str, session_id: str) -> bool:
+        """
+        Add a member to a group.
+
+        Args:
+            group_id: The group conversation ID
+            session_id: Session ID of the user to add
+
+        Returns:
+            True if member was added successfully
+        """
+        result = self.evaluate(f"""
+            (async function() {{
+                const convo = window.getConversationController().get('{group_id}');
+                if (!convo) throw new Error('Group not found');
+                const type = convo.get('type');
+                if (type !== 'group' && type !== 'groupv2') throw new Error('Not a group');
+
+                // Check if we're admin
+                const admins = convo.get('groupAdmins') || [];
+                const ourId = window.textsecure.storage.user.getNumber();
+                if (!admins.includes(ourId)) throw new Error('You must be an admin to add members');
+
+                // Add the member
+                const members = convo.get('members') || [];
+                if (members.includes('{session_id}')) throw new Error('User is already a member');
+
+                await convo.addMembers(['{session_id}']);
+                return true;
+            }})()
+        """)
+        return result is True
+
+    def remove_group_member(self, group_id: str, session_id: str) -> bool:
+        """
+        Remove a member from a group.
+
+        Args:
+            group_id: The group conversation ID
+            session_id: Session ID of the user to remove
+
+        Returns:
+            True if member was removed successfully
+        """
+        result = self.evaluate(f"""
+            (async function() {{
+                const convo = window.getConversationController().get('{group_id}');
+                if (!convo) throw new Error('Group not found');
+                const type = convo.get('type');
+                if (type !== 'group' && type !== 'groupv2') throw new Error('Not a group');
+
+                // Check if we're admin
+                const admins = convo.get('groupAdmins') || [];
+                const ourId = window.textsecure.storage.user.getNumber();
+                if (!admins.includes(ourId)) throw new Error('You must be an admin to remove members');
+
+                await convo.removeMembers(['{session_id}']);
+                return true;
+            }})()
+        """)
+        return result is True
+
+    def promote_to_admin(self, group_id: str, session_id: str) -> bool:
+        """
+        Promote a member to admin.
+
+        Args:
+            group_id: The group conversation ID
+            session_id: Session ID of the user to promote
+
+        Returns:
+            True if member was promoted successfully
+        """
+        result = self.evaluate(f"""
+            (async function() {{
+                const convo = window.getConversationController().get('{group_id}');
+                if (!convo) throw new Error('Group not found');
+                const type = convo.get('type');
+                if (type !== 'group' && type !== 'groupv2') throw new Error('Not a group');
+
+                // Check if we're admin
+                const admins = convo.get('groupAdmins') || [];
+                const ourId = window.textsecure.storage.user.getNumber();
+                if (!admins.includes(ourId)) throw new Error('You must be an admin to promote members');
+
+                // Check if user is a member
+                const members = convo.get('members') || [];
+                if (!members.includes('{session_id}')) throw new Error('User is not a member of this group');
+
+                // Check if already admin
+                if (admins.includes('{session_id}')) throw new Error('User is already an admin');
+
+                await convo.addAdmin('{session_id}');
+                return true;
+            }})()
+        """)
+        return result is True
+
+    def demote_admin(self, group_id: str, session_id: str) -> bool:
+        """
+        Demote an admin to regular member.
+
+        Args:
+            group_id: The group conversation ID
+            session_id: Session ID of the admin to demote
+
+        Returns:
+            True if admin was demoted successfully
+        """
+        result = self.evaluate(f"""
+            (async function() {{
+                const convo = window.getConversationController().get('{group_id}');
+                if (!convo) throw new Error('Group not found');
+                const type = convo.get('type');
+                if (type !== 'group' && type !== 'groupv2') throw new Error('Not a group');
+
+                // Check if we're admin
+                const admins = convo.get('groupAdmins') || [];
+                const ourId = window.textsecure.storage.user.getNumber();
+                if (!admins.includes(ourId)) throw new Error('You must be an admin to demote members');
+
+                // Check if user is admin
+                if (!admins.includes('{session_id}')) throw new Error('User is not an admin');
+
+                await convo.removeAdmin('{session_id}');
+                return true;
+            }})()
+        """)
+        return result is True
+
+    def leave_group(self, group_id: str) -> bool:
+        """
+        Leave a group.
+
+        Args:
+            group_id: The group conversation ID
+
+        Returns:
+            True if successfully left the group
+        """
+        result = self.evaluate(f"""
+            (async function() {{
+                const convo = window.getConversationController().get('{group_id}');
+                if (!convo) throw new Error('Group not found');
+                const type = convo.get('type');
+                if (type !== 'group' && type !== 'groupv2') throw new Error('Not a group');
+
+                await convo.leaveGroup();
+                return true;
+            }})()
+        """)
+        return result is True
+
+    def create_group(self, name: str, members: list[str]) -> Optional[str]:
+        """
+        Create a new group.
+
+        Args:
+            name: Name for the new group
+            members: List of Session IDs to add as members
+
+        Returns:
+            The new group's conversation ID, or None if failed
+        """
+        members_json = json.dumps(members)
+        name_escaped = json.dumps(name)
+
+        return self.evaluate(f"""
+            (async function() {{
+                const controller = window.getConversationController();
+                const members = {members_json};
+                const name = {name_escaped};
+
+                // Create the group using Session's group creation API
+                const group = await controller.createGroup(members, name);
+                if (!group) throw new Error('Failed to create group');
+
+                return group.id;
+            }})()
+        """)
+
+    def rename_group(self, group_id: str, new_name: str) -> bool:
+        """
+        Rename a group.
+
+        Args:
+            group_id: The group conversation ID
+            new_name: New name for the group
+
+        Returns:
+            True if group was renamed successfully
+        """
+        name_escaped = json.dumps(new_name)
+
+        result = self.evaluate(f"""
+            (async function() {{
+                const convo = window.getConversationController().get('{group_id}');
+                if (!convo) throw new Error('Group not found');
+                const type = convo.get('type');
+                if (type !== 'group' && type !== 'groupv2') throw new Error('Not a group');
+
+                // Check if we're admin
+                const admins = convo.get('groupAdmins') || [];
+                const ourId = window.textsecure.storage.user.getNumber();
+                if (!admins.includes(ourId)) throw new Error('You must be an admin to rename the group');
+
+                await convo.setGroupName({name_escaped});
+                return true;
+            }})()
+        """)
+        return result is True
+
     # === Utility ===
 
     @staticmethod

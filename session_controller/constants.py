@@ -34,8 +34,8 @@ class SQLQueries:
     # Conversations
     GET_CONVERSATIONS = """
         SELECT id, type, active_at, displayNameInProfile, nickname,
-               lastMessage, unreadCount, isApproved, didApproveMe,
-               avatarInProfile
+               lastMessage, unreadCount, members, groupAdmins,
+               isApproved, didApproveMe, avatarInProfile
         FROM conversations
         WHERE active_at > 0
         ORDER BY active_at DESC

@@ -605,24 +605,40 @@ class SessionCDP:
                 const type = convo.get('type');
                 if (type !== 'group' && type !== 'groupv2') throw new Error('Not a group');
 
-                // Try to rename - Session will enforce permissions
-                if (typeof convo.setGroupName === 'function') {{
-                    await convo.setGroupName({name_escaped});
+                // Try various methods to rename
+                const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(convo))
+                    .filter(m => typeof convo[m] === 'function');
+
+                // Look for rename/name/update related methods
+                const nameMethodCandidates = methods.filter(m =>
+                    m.toLowerCase().includes('name') ||
+                    m.toLowerCase().includes('rename') ||
+                    m.toLowerCase().includes('update')
+                );
+
+                // Try setGroupNameAndAvatar (common in Session)
+                if (typeof convo.setGroupNameAndAvatar === 'function') {{
+                    await convo.setGroupNameAndAvatar({name_escaped});
                     return true;
                 }}
 
-                // Try alternative methods
-                if (typeof convo.updateGroupName === 'function') {{
-                    await convo.updateGroupName({name_escaped});
+                // Try updateGroup
+                if (typeof convo.updateGroup === 'function') {{
+                    await convo.updateGroup({{ name: {name_escaped} }});
                     return true;
                 }}
 
-                if (typeof convo.setName === 'function') {{
-                    await convo.setName({name_escaped});
+                // Try set method with name attribute
+                if (typeof convo.set === 'function') {{
+                    convo.set('displayNameInProfile', {name_escaped});
+                    if (typeof convo.commit === 'function') {{
+                        await convo.commit();
+                    }}
                     return true;
                 }}
 
-                throw new Error('No method found to rename group');
+                // Return debug info if nothing works
+                throw new Error('No rename method found. Available methods with name/update: ' + nameMethodCandidates.join(', '));
             }})()
         """)
         return result is True

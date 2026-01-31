@@ -6,9 +6,12 @@ A Python CLI tool and library for programmatic control of [Session Desktop](http
 
 - **Database Access**: Read messages, conversations, and attachments directly from Session's SQLCipher database
 - **CDP Control**: Send messages and control Session via Chrome DevTools Protocol
+- **Group Management**: Create groups, add/remove members, promote/demote admins
 - **Real-time Monitoring**: Watch for new messages in real-time
 - **Full-text Search**: Search across all messages using FTS5
 - **Attachment Support**: Decrypt and download encrypted attachments
+- **Interactive REPL**: Persistent session with tab completion
+- **User Config**: Save defaults in `~/.config/session-cli/config.yaml`
 - **Cross-platform**: Works on macOS and Linux
 
 ## Installation
@@ -118,6 +121,57 @@ session-cli search --unread-only
 Combine multiple filters:
 ```bash
 session-cli search "project" --after 30d --conversation "Team Chat" --type text --limit 50
+```
+
+### Group Management
+
+List group members and admins:
+
+```bash
+session-cli group members <group_id>
+```
+
+Add a member to a group (requires admin):
+
+```bash
+session-cli group add <group_id> <session_id>
+```
+
+Remove a member from a group (requires admin):
+
+```bash
+session-cli group remove <group_id> <session_id>
+```
+
+Promote a member to admin:
+
+```bash
+session-cli group promote <group_id> <session_id>
+```
+
+Demote an admin to regular member:
+
+```bash
+session-cli group demote <group_id> <session_id>
+```
+
+Leave a group:
+
+```bash
+session-cli group leave <group_id>
+session-cli group leave <group_id> --yes  # Skip confirmation
+```
+
+Create a new group:
+
+```bash
+session-cli group create "Group Name" 05abc123... 05def456...
+```
+
+Rename a group (requires admin):
+
+```bash
+session-cli group rename <group_id> "New Group Name"
 ```
 
 ### Manage Requests
@@ -255,6 +309,15 @@ session-backup-20260130_123456/
 | `accept-request <id>` | Accept a pending request (requires CDP) |
 | `decline-request <id>` | Decline a pending request (requires CDP) |
 | `block-request <id>` | Block and decline a request (requires CDP) |
+| `group members <id>` | List group members and admins (requires CDP) |
+| `group add <id> <sid>` | Add member to group (requires CDP) |
+| `group remove <id> <sid>` | Remove member from group (requires CDP) |
+| `group promote <id> <sid>` | Promote member to admin (requires CDP) |
+| `group demote <id> <sid>` | Demote admin to member (requires CDP) |
+| `group leave <id>` | Leave a group (requires CDP) |
+| `group create <name> <ids>` | Create a new group (requires CDP) |
+| `group rename <id> <name>` | Rename a group (requires CDP) |
+| `repl` | Start interactive REPL mode |
 | `info` | Show Session information |
 
 ## Python API
@@ -344,7 +407,7 @@ from session_controller import SessionCDP
 with SessionCDP(port=9222) as cdp:
     # Get conversations
     convos = cdp.get_conversations()
-    
+
     # Send message
     cdp.send_message("05abc123...", "Hello!")
 
@@ -356,9 +419,71 @@ with SessionCDP(port=9222) as cdp:
     cdp.decline_request("05abc123...")
     cdp.block_request("05abc123...")
 
+    # Group management
+    members = cdp.get_group_members("group_id")  # Get members and admins
+    cdp.add_group_member("group_id", "05abc...")  # Add member
+    cdp.remove_group_member("group_id", "05abc...")  # Remove member
+    cdp.promote_to_admin("group_id", "05abc...")  # Promote to admin
+    cdp.demote_admin("group_id", "05abc...")  # Demote admin
+    cdp.leave_group("group_id")  # Leave group
+    new_id = cdp.create_group("Name", ["05abc...", "05def..."])  # Create group
+    cdp.rename_group("group_id", "New Name")  # Rename group
+
     # Get Redux state
     state = cdp.get_redux_state()
 ```
+
+## Interactive REPL Mode
+
+Start an interactive session with persistent database connection:
+
+```bash
+session-cli repl
+# or
+session-cli interactive
+```
+
+Available REPL commands:
+```
+session> list              # List conversations
+session> messages <id> 20  # Show 20 messages
+session> send <id> Hello!  # Send message (connects CDP)
+session> search keyword    # Search messages
+session> requests          # Show pending requests
+session> accept <id>       # Accept request
+session> group members <id>  # List group members
+session> group add <id> <sid>  # Add member to group
+session> info              # Show session info
+session> json on           # Toggle JSON output
+session> quit              # Exit
+```
+
+## User Configuration
+
+Save your defaults in a config file:
+
+**macOS**: `~/Library/Application Support/session-cli/config.yaml`
+**Linux**: `~/.config/session-cli/config.yaml`
+
+```yaml
+# Example config
+profile: null
+port: 9222
+json: false
+
+commands:
+  messages:
+    limit: 50
+  search:
+    limit: 30
+  watch:
+    interval: 2.0
+    media_dir: ./media
+  export:
+    format: json
+```
+
+Priority order: CLI args > config file > defaults
 
 ## Session Profiles
 

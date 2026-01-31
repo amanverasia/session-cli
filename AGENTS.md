@@ -13,21 +13,25 @@ Session CLI is a Python command-line tool and library for programmatic control o
 
 ```
 session-cli/
-├── session_controller/          # Main package (to be renamed to session_cli)
+├── session_controller/          # Main package
 │   ├── __init__.py
 │   ├── cli.py                  # CLI implementation
 │   ├── config.py               # Session configuration & path handling
 │   ├── database.py             # SQLCipher database access
-│   └── cdp.py                  # Chrome DevTools Protocol client
+│   ├── cdp.py                  # Chrome DevTools Protocol client
+│   ├── repl.py                 # Interactive REPL mode
+│   ├── user_config.py          # User configuration file support
+│   ├── constants.py            # SQL queries and constants
+│   └── exceptions.py           # Custom exceptions
 ├── examples/                   # Usage examples
-├── tests/                      # Test suite (to be added)
+├── tests/                      # Test suite
 ├── README.md                   # Main documentation
 ├── LICENSE                     # MIT License
-├── setup.py                    # setuptools configuration
 ├── pyproject.toml             # Modern Python project config
-├── requirements.txt           # Core dependencies
 ├── AGENTS.md                  # This file
-└── TODO.md                    # Task list
+├── CLAUDE.md                  # Claude Code instructions
+├── TODO.md                    # Task list
+└── CHANGELOG.md               # Version history
 ```
 
 ## Code Conventions
@@ -118,6 +122,7 @@ session-cli export <id> --format json
 session-cli export-all --format html
 session-cli backup --encrypt
 session-cli restore <backup-file>
+session-cli repl                           # Interactive REPL mode
 
 # Enhanced search
 session-cli search "keyword"
@@ -129,17 +134,29 @@ session-cli search --unread-only
 
 # Request management
 session-cli requests                       # List all pending requests
-session-cli requests --type message          # Only message requests
-session-cli requests --type contact          # Only contact requests
+session-cli requests --type message        # Only message requests
+session-cli requests --type contact        # Only contact requests
 session-cli requests --conversation-type private # Only private conversations
-session-cli requests --unread               # Only unread requests
-session-cli requests --group                  # Group by request type
-session-cli accept-request <id>             # Accept a pending request
-session-cli decline-request <id>            # Decline a pending request
-session-cli block-request <id>              # Block and decline a request
+session-cli requests --unread              # Only unread requests
+session-cli requests --group               # Group by request type
+session-cli accept-request <id>            # Accept a pending request
+session-cli decline-request <id>           # Decline a pending request
+session-cli block-request <id>             # Block and decline a request
 
-# Run test connection
-python test_connection.py
+# Group management (requires CDP)
+session-cli group members <id>             # List group members
+session-cli group add <id> <session_id>    # Add member to group
+session-cli group remove <id> <session_id> # Remove member from group
+session-cli group promote <id> <session_id> # Promote to admin
+session-cli group demote <id> <session_id> # Demote admin
+session-cli group leave <id>               # Leave group
+
+# Statistics
+session-cli stats                          # Overall messaging stats
+session-cli stats --top 10                 # Top 10 active conversations
+session-cli stats --period 30d             # Stats for last 30 days
+session-cli stats --activity day           # Activity by day
+session-cli stats --conversation <id>      # Stats for specific conversation
 
 # Run examples
 python examples/basic_usage.py
@@ -156,6 +173,8 @@ python examples/backup_session.py
 - **Database writes**: Read-only access to prevent data corruption
 - **Multi-platform paths**: Need to verify Windows path handling
 - **CDP request management**: API methods may vary by Session version. Listing requests works reliably, but accept/decline/block operations may require investigation for specific Session Desktop versions.
+- **Group creation**: Not supported via CDP (use Session GUI instead)
+- **Group rename**: Not supported via CDP - changes don't sync to network (use Session GUI instead)
 
 ### Fixed Bugs (v1.1.x - v1.3.0)
 - DateTime import order causing `'NoneType' object has no attribute 'replace'` in HTML export
@@ -231,6 +250,7 @@ python examples/backup_session.py
 - Helper methods for conversation and contact name/ID resolution
 - Date parsing utility supporting multiple formats (ISO, relative, Unix timestamp)
 - Request management: Get pending requests, get specific request
+- Statistics: Message counts, activity by date, top conversations
 - Dependencies: `sqlcipher3`, `pynacl`, `pyaes`
 
 ### SessionCDP (`cdp.py`)
@@ -238,6 +258,7 @@ python examples/backup_session.py
 - Executes JavaScript in renderer context
 - Manages connection lifecycle
 - Request management: accept, decline, and block pending requests
+- Group management: list members, add/remove members, promote/demote admins, leave group
 - Dependencies: `websocket-client`
 
 ### CLI (`cli.py`)
@@ -245,8 +266,27 @@ python examples/backup_session.py
 - JSON output option for all commands
 - `--version` flag for package version display
 - Request management commands: requests, accept-request, decline-request, block-request
+- Group management subcommand with nested commands
+- Stats command for messaging statistics
+- Loads user configuration from config file
 - Error handling and user feedback
 - Orchestrates Database/CDP usage
+
+### SessionREPL (`repl.py`)
+- Interactive REPL mode using Python's `cmd` module
+- Persistent database connection across commands
+- Lazy CDP connection (only connects when needed)
+- Tab completion for conversation IDs and names
+- Commands: list, messages, send, search, requests, accept, group, stats, info, quit
+- Dependencies: Python stdlib `cmd` module
+
+### UserConfig (`user_config.py`)
+- User configuration file support
+- Platform-specific config paths (macOS: `~/Library/Application Support/`, Linux: `~/.config/`)
+- YAML configuration format
+- Per-command default settings (limits, formats, intervals)
+- Priority: CLI args > config file > hardcoded defaults
+- Dependencies: `pyyaml`
 
 ## Dependencies
 
@@ -255,6 +295,7 @@ python examples/backup_session.py
 - `pynacl>=1.5.0` - Attachment decryption (libsodium)
 - `websocket-client>=1.0.0` - CDP WebSocket client
 - `pyaes>=1.6.0` - Backup encryption (AES-256-ECB)
+- `pyyaml>=6.0.0` - User configuration file parsing
 
 ### Development
 - `pytest>=7.0.0` - Testing framework

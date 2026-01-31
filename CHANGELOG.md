@@ -10,6 +10,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `--version` / `-v` flag to display package version
 
+## [1.5.0] - 2026-01-31
+
+### Added
+- Statistics command for messaging analytics
+- `get_stats()` database method for overall statistics
+- `get_top_conversations()` database method for most active conversations
+- `get_activity_by_date()` database method for activity breakdown
+- CLI `stats` command with filters: `--conversation`, `--period`, `--top`, `--activity`
+- REPL `stats` command for interactive statistics
+
+### Features
+- Total messages count (sent/received breakdown)
+- Messages with attachments count
+- Conversation counts (private/group)
+- Busiest hours and days of week
+- Average messages per day
+- Top N most active conversations
+- Activity breakdown by day/week/month
+- Filter by time period (7d, 30d, etc.)
+- Filter by specific conversation
+
+## [1.4.0] - 2026-01-31
+
+### Added
+- User configuration file support (`~/.config/session-cli/config.yaml` on Linux, `~/Library/Application Support/session-cli/config.yaml` on macOS)
+- Interactive REPL mode with `session-cli repl` command
+- Group management via CDP (add/remove members, promote/demote admins, leave group)
+- `pyyaml>=6.0.0` dependency for configuration file parsing
+
+### Features
+- **User Config**: Save defaults for profile, port, JSON output, and per-command settings (limits, formats, intervals)
+- **REPL Mode**: Persistent database connection, lazy CDP connection, tab completion for conversation IDs
+- **REPL Commands**: list, messages, send, search, requests, accept, group, stats, info, json, refresh, quit
+- **Group Management**: List members/admins, add members, remove members, promote to admin, demote admin, leave group
+
+### CLI Usage Examples
+```bash
+# Interactive REPL
+session-cli repl
+session-cli interactive
+
+# Group management
+session-cli group members <group_id>
+session-cli group add <group_id> <session_id>
+session-cli group remove <group_id> <session_id>
+session-cli group promote <group_id> <session_id>
+session-cli group demote <group_id> <session_id>
+session-cli group leave <group_id>
+```
+
+### Limitations
+- Group creation not supported via CDP (use Session GUI)
+- Group rename doesn't sync to network via CDP (use Session GUI)
+
 ## [1.3.0] - 2025-01-31
 
 ### Added

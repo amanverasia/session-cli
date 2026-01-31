@@ -40,23 +40,23 @@ This document tracks planned features, improvements, and known issues.
 - [ ] Add contact management (add, remove, block)
 - [ ] Add profile management via CLI
 - [x] Backup and restore Session data (full and incremental) - COMPLETED
-- [ ] Statistics and analytics dashboard
+- [x] Statistics and analytics dashboard - COMPLETED (v1.5.0)
 - [x] Enhanced search with filters (date range, sender, attachments) - COMPLETED
 - [x] Message filtering by type (text, attachment, quote) - COMPLETED
-- [ ] Configuration file support (`~/.session-cli/config.yaml`)
+- [x] Configuration file support (`~/.config/session-cli/config.yaml`) - COMPLETED (v1.4.0)
 - [ ] Webhook integration for automation
 - [ ] Auto-reply bot framework
-- [ ] Interactive REPL mode
+- [x] Interactive REPL mode - COMPLETED (v1.4.0)
 - [ ] Contact management via CDP
-- [ ] Group management via CDP
+- [x] Group management via CDP - COMPLETED (v1.4.0) - add/remove members, promote/demote admins, leave group
 - [ ] Message thread view
 - [ ] Message templates
 - [ ] Scheduled message sending
 
 ### CLI Improvements
 - [x] Add `--version` flag - COMPLETED
-- [ ] Add interactive mode (REPL)
-- [ ] Add tab completion for commands
+- [x] Add interactive mode (REPL) - COMPLETED (v1.4.0)
+- [x] Add tab completion for commands - COMPLETED (in REPL mode)
 - [ ] Add color output (opt-in with `--color`)
 - [ ] Add progress bars for long operations
 - [ ] Add `--quiet` flag for automation
@@ -67,7 +67,7 @@ This document tracks planned features, improvements, and known issues.
 ## Low Priority
 
 ### Enhancements
-- [ ] Add configuration file support (`~/.session-cli/config.yaml`)
+- [x] Add configuration file support (`~/.config/session-cli/config.yaml`) - COMPLETED (v1.4.0)
 - [ ] Add aliases for common commands
 - [ ] Add shell integration (bash/zsh/fish completion)
 - [ ] Add Docker container for development
@@ -116,6 +116,8 @@ This document tracks planned features, improvements, and known issues.
 - [ ] Database is read-only (writes not supported)
 - [ ] No multi-threading for concurrent operations
 - [ ] Limited error recovery from database corruption
+- [ ] Group creation not supported via CDP (use Session GUI)
+- [ ] Group rename doesn't sync to network via CDP (use Session GUI)
 
 ## Future Ideas (Not Prioritized)
 
@@ -207,6 +209,30 @@ This document tracks planned features, improvements, and known issues.
 - [x] Added grouping in requests output (by request type)
 - [x] Added is_private and is_group properties to Request
 - [!] **Known Issue**: CDP request management methods need investigation - API methods may have changed in newer Session versions. Listing requests works, but accept/decline/block may not work correctly.
+
+### v1.4.0 (User Config, REPL, Group Management)
+- [x] Added UserConfig for user configuration file support
+- [x] Added platform-specific config paths (macOS/Linux)
+- [x] Added YAML configuration file parsing
+- [x] Added per-command default settings in config
+- [x] Added SessionREPL class for interactive REPL mode
+- [x] Added persistent database connection in REPL
+- [x] Added lazy CDP connection in REPL
+- [x] Added tab completion for conversation IDs in REPL
+- [x] Added `repl` CLI command with `interactive` alias
+- [x] Added group management CDP methods (add/remove members, promote/demote admins, leave)
+- [x] Added `group` CLI subcommand with nested commands
+- [x] Added group commands to REPL mode
+- [x] Added pyyaml dependency
+- [!] **Limitation**: Group creation and rename not supported via CDP (use Session GUI)
+
+### v1.5.0 (Statistics)
+- [x] Added get_stats() database method for messaging statistics
+- [x] Added get_top_conversations() database method
+- [x] Added get_activity_by_date() database method
+- [x] Added stats CLI command with filters (--conversation, --period, --top, --activity)
+- [x] Added stats command to REPL mode
+- [x] Stats include: total messages, sent/received, attachments, busiest hours/days, averages
 
 ### Repository Setup
 - [x] Create README.md

@@ -146,16 +146,23 @@ session-cli/
 ├── session_controller/      # Main package
 │   ├── __init__.py
 │   ├── cli.py              # CLI implementation
-│   ├── config.py           # Configuration handling
+│   ├── config.py           # Session configuration handling
 │   ├── database.py         # Database access
-│   └── cdp.py              # CDP client
+│   ├── cdp.py              # CDP client
+│   ├── repl.py             # Interactive REPL mode
+│   ├── user_config.py      # User configuration file support
+│   ├── constants.py        # SQL queries and constants
+│   └── exceptions.py       # Custom exceptions
 ├── examples/               # Usage examples
 ├── tests/                 # Test suite
 ├── README.md
 ├── LICENSE
-├── setup.py
 ├── pyproject.toml
-└── requirements.txt
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── AGENTS.md
+├── CLAUDE.md
+└── TODO.md
 ```
 
 ## License

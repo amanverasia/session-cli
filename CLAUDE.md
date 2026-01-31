@@ -34,7 +34,9 @@ session-cli export <id> --format json      # export conversation
 session-cli backup --encrypt               # create encrypted backup
 session-cli group members <id>             # list group members
 session-cli group add <id> <session_id>    # add member to group
-session-cli group create "Name" <ids...>   # create new group
+session-cli group promote <id> <session_id> # promote to admin
+session-cli stats                          # messaging statistics
+session-cli stats --top 10 --period 30d    # top conversations in 30 days
 session-cli repl                           # interactive REPL mode
 ```
 
@@ -84,6 +86,7 @@ Dataclasses (`Message`, `Conversation`, `Request`) with `raw` dict for JSON acce
 - **macOS and Linux only** (Windows not implemented)
 - **Database is read-only** to prevent corruption
 - **CDP attachment sending** not implemented
+- **Group creation/rename** not supported via CDP (use Session GUI)
 - **Version sync**: Update version in `pyproject.toml`, `__init__.py`, and `constants.py`
 
 ## Session Desktop Integration
@@ -93,4 +96,5 @@ Dataclasses (`Message`, `Conversation`, `Request`) with `raw` dict for JSON acce
 - Key tables: `conversations`, `messages` (JSON column), `messages_fts` (full-text search)
 - Group fields: `members` (JSON array), `groupAdmins` (JSON array), `type` ("group" or "groupv2")
 - CDP globals: `window.getConversationController()`, `window.inboxStore`
-- CDP group methods: `convo.addMembers()`, `convo.removeMembers()`, `convo.addAdmin()`, `convo.removeAdmin()`, `convo.leaveGroup()`, `convo.setGroupName()`, `controller.createGroup()`
+- CDP group methods: `convo.addMembers()`, `convo.removeMembers()`, `convo.addAdmin()`, `convo.removeAdmin()`, `convo.leaveGroup()`
+- Note: `createGroup()` and `setGroupName()` don't sync to network - use Session GUI instead

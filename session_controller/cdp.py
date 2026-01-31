@@ -605,40 +605,16 @@ class SessionCDP:
                 const type = convo.get('type');
                 if (type !== 'group' && type !== 'groupv2') throw new Error('Not a group');
 
-                // Try various methods to rename
-                const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(convo))
-                    .filter(m => typeof convo[m] === 'function');
-
-                // Look for rename/name/update related methods
-                const nameMethodCandidates = methods.filter(m =>
-                    m.toLowerCase().includes('name') ||
-                    m.toLowerCase().includes('rename') ||
-                    m.toLowerCase().includes('update')
-                );
-
-                // Try setGroupNameAndAvatar (common in Session)
-                if (typeof convo.setGroupNameAndAvatar === 'function') {{
-                    await convo.setGroupNameAndAvatar({name_escaped});
-                    return true;
-                }}
-
-                // Try updateGroup
-                if (typeof convo.updateGroup === 'function') {{
-                    await convo.updateGroup({{ name: {name_escaped} }});
-                    return true;
-                }}
-
-                // Try set method with name attribute
-                if (typeof convo.set === 'function') {{
-                    convo.set('displayNameInProfile', {name_escaped});
+                // Use setNonPrivateNameNoCommit and then commit
+                if (typeof convo.setNonPrivateNameNoCommit === 'function') {{
+                    await convo.setNonPrivateNameNoCommit({name_escaped});
                     if (typeof convo.commit === 'function') {{
                         await convo.commit();
                     }}
                     return true;
                 }}
 
-                // Return debug info if nothing works
-                throw new Error('No rename method found. Available methods with name/update: ' + nameMethodCandidates.join(', '));
+                throw new Error('Rename method not available');
             }})()
         """)
         return result is True

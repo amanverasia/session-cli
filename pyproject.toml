@@ -3,28 +3,34 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "session-controller"
+name = "session-cli"
 version = "1.5.0"
 description = "Python CLI tool and library for programmatic control of Session Desktop"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
-    {name = "Session Controller Contributors"}
+    {name = "Aman Verasia", email = "verasiaaman3@gmail.com"}
 ]
-keywords = ["session", "messenger", "desktop", "cli", "cdp", "sqlcipher"]
+maintainers = [
+    {name = "Aman Verasia", email = "verasiaaman3@gmail.com"}
+]
+keywords = ["session", "messenger", "desktop", "cli", "cdp", "sqlcipher", "privacy", "encryption"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: End Users/Desktop",
     "Topic :: Communications :: Chat",
-    "License :: OSI Approved :: MIT License",
+    "Topic :: Security :: Cryptography",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
     "Environment :: Console",
+    "Typing :: Typed",
 ]
 dependencies = [
     "sqlcipher3>=0.5.0",
@@ -53,6 +59,10 @@ Documentation = "https://github.com/amanverasia/session-cli#readme"
 Repository = "https://github.com/amanverasia/session-cli"
 "Bug Reports" = "https://github.com/amanverasia/session-cli/issues"
 "Source" = "https://github.com/amanverasia/session-cli"
+
+[tool.setuptools]
+packages = ["session_controller"]
+package-data = {"session_controller" = ["py.typed"]}
 
 [tool.black]
 line-length = 100

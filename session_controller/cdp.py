@@ -367,14 +367,58 @@ class SessionCDP:
                     }} catch(e) {{}}
                 }}
 
-                const admins = convo.get('groupAdmins') || [];
+                // Try multiple possible property names for members/admins
+                const attrs = convo.attributes || {{}};
+                let members = convo.get('members') || attrs.members || [];
+                let admins = convo.get('groupAdmins') || attrs.groupAdmins || [];
+
+                // For groupv2, try alternative property names
+                if (type === 'groupv2') {{
+                    // Try to get members from the group object
+                    if (members.length === 0) {{
+                        members = convo.get('zombies') || [];
+                    }}
+                    // Try getting from conversation collection
+                    if (typeof convo.getMembers === 'function') {{
+                        try {{
+                            const memberModels = convo.getMembers();
+                            if (memberModels && memberModels.length > 0) {{
+                                members = memberModels.map(m => m.id || m.get('id'));
+                            }}
+                        }} catch(e) {{}}
+                    }}
+                    // Try contactCollection
+                    if (members.length === 0 && convo.contactCollection) {{
+                        try {{
+                            members = convo.contactCollection.map(c => c.id);
+                        }} catch(e) {{}}
+                    }}
+                }}
+
+                // Check if we're admin - also check isAdmin method if available
+                let weAreAdmin = ourId ? admins.includes(ourId) : false;
+                if (!weAreAdmin && typeof convo.isAdmin === 'function') {{
+                    try {{
+                        weAreAdmin = convo.isAdmin(ourId);
+                    }} catch(e) {{}}
+                }}
+                if (!weAreAdmin && convo.get('isAdmin')) {{
+                    weAreAdmin = true;
+                }}
+
                 return {{
                     id: convo.id,
                     name: convo.get('displayNameInProfile') || convo.get('name') || 'Unknown Group',
                     type: type,
-                    members: convo.get('members') || [],
+                    members: members,
                     admins: admins,
-                    weAreAdmin: ourId ? admins.includes(ourId) : false
+                    weAreAdmin: weAreAdmin,
+                    // Debug: include raw attributes to help diagnose
+                    _debug: {{
+                        attributeKeys: Object.keys(attrs),
+                        hasGetMembers: typeof convo.getMembers === 'function',
+                        hasContactCollection: !!convo.contactCollection
+                    }}
                 }};
             }})()
         """)

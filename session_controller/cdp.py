@@ -652,15 +652,53 @@ class SessionCDP:
 
         return self.evaluate(f"""
             (async function() {{
-                const controller = window.getConversationController();
                 const members = {members_json};
                 const name = {name_escaped};
 
-                // Create the group using Session's group creation API
-                const group = await controller.createGroup(members, name);
-                if (!group) throw new Error('Failed to create group');
+                // Try different APIs for creating groups
+                // Method 1: Use libsession or Session's group creation utilities
+                if (window.libsession && window.libsession.createGroup) {{
+                    const group = await window.libsession.createGroup(name, members);
+                    if (group) return group.id || group;
+                }}
 
-                return group.id;
+                // Method 2: Try SessionClosedGroupV2 creation
+                if (window.SessionClosedGroupV2) {{
+                    const group = await window.SessionClosedGroupV2.createClosedGroup(name, members);
+                    if (group) return group;
+                }}
+
+                // Method 3: Try using the conversations store actions
+                if (window.inboxStore) {{
+                    const actions = window.inboxStore.dispatch;
+                    // Try to find createGroup action
+                }}
+
+                // Method 4: Try require for group creation module
+                try {{
+                    const groupUtils = require('./ts/session/group');
+                    if (groupUtils && groupUtils.createClosedGroup) {{
+                        const groupId = await groupUtils.createClosedGroup(name, members);
+                        if (groupId) return groupId;
+                    }}
+                }} catch(e) {{}}
+
+                // Method 5: Try ClosedGroup module
+                try {{
+                    const ClosedGroup = require('./ts/session/group/closed-group');
+                    if (ClosedGroup && ClosedGroup.createClosedGroup) {{
+                        const groupId = await ClosedGroup.createClosedGroup(name, members);
+                        if (groupId) return groupId;
+                    }}
+                }} catch(e) {{}}
+
+                // Method 6: Try direct window functions
+                if (typeof window.createClosedGroup === 'function') {{
+                    const groupId = await window.createClosedGroup(name, members);
+                    if (groupId) return groupId;
+                }}
+
+                throw new Error('Group creation API not found. This feature may require a newer version of Session Desktop.');
             }})()
         """)
 

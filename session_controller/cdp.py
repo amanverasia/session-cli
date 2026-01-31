@@ -312,6 +312,28 @@ class SessionCDP:
 
     # === Group Management ===
 
+    def _get_our_session_id_js(self) -> str:
+        """Return JavaScript snippet to get our Session ID safely."""
+        return """
+            (function() {
+                try {
+                    if (window.textsecure && window.textsecure.storage && window.textsecure.storage.user) {
+                        return window.textsecure.storage.user.getNumber();
+                    }
+                } catch(e) {}
+                try {
+                    const state = window.inboxStore.getState();
+                    if (state && state.user && state.user.ourNumber) {
+                        return state.user.ourNumber;
+                    }
+                } catch(e) {}
+                try {
+                    return require('./ts/session/utils').UserUtils.getOurPubKeyStrFromCache();
+                } catch(e) {}
+                return null;
+            })()
+        """
+
     def get_group_members(self, group_id: str) -> Optional[dict]:
         """
         Get members and admins of a group.
@@ -328,15 +350,31 @@ class SessionCDP:
                 if (!convo) return null;
                 const type = convo.get('type');
                 if (type !== 'group' && type !== 'groupv2') return null;
+
+                // Get our Session ID safely
+                let ourId = null;
+                try {{
+                    if (window.textsecure && window.textsecure.storage && window.textsecure.storage.user) {{
+                        ourId = window.textsecure.storage.user.getNumber();
+                    }}
+                }} catch(e) {{}}
+                if (!ourId) {{
+                    try {{
+                        const state = window.inboxStore.getState();
+                        if (state && state.user && state.user.ourNumber) {{
+                            ourId = state.user.ourNumber;
+                        }}
+                    }} catch(e) {{}}
+                }}
+
+                const admins = convo.get('groupAdmins') || [];
                 return {{
                     id: convo.id,
                     name: convo.get('displayNameInProfile') || convo.get('name') || 'Unknown Group',
                     type: type,
                     members: convo.get('members') || [],
-                    admins: convo.get('groupAdmins') || [],
-                    weAreAdmin: (convo.get('groupAdmins') || []).includes(
-                        window.textsecure.storage.user.getNumber()
-                    )
+                    admins: admins,
+                    weAreAdmin: ourId ? admins.includes(ourId) : false
                 }};
             }})()
         """)
@@ -359,10 +397,25 @@ class SessionCDP:
                 const type = convo.get('type');
                 if (type !== 'group' && type !== 'groupv2') throw new Error('Not a group');
 
+                // Get our Session ID safely
+                let ourId = null;
+                try {{
+                    if (window.textsecure && window.textsecure.storage && window.textsecure.storage.user) {{
+                        ourId = window.textsecure.storage.user.getNumber();
+                    }}
+                }} catch(e) {{}}
+                if (!ourId) {{
+                    try {{
+                        const state = window.inboxStore.getState();
+                        if (state && state.user && state.user.ourNumber) {{
+                            ourId = state.user.ourNumber;
+                        }}
+                    }} catch(e) {{}}
+                }}
+
                 // Check if we're admin
                 const admins = convo.get('groupAdmins') || [];
-                const ourId = window.textsecure.storage.user.getNumber();
-                if (!admins.includes(ourId)) throw new Error('You must be an admin to add members');
+                if (!ourId || !admins.includes(ourId)) throw new Error('You must be an admin to add members');
 
                 // Add the member
                 const members = convo.get('members') || [];
@@ -392,10 +445,25 @@ class SessionCDP:
                 const type = convo.get('type');
                 if (type !== 'group' && type !== 'groupv2') throw new Error('Not a group');
 
+                // Get our Session ID safely
+                let ourId = null;
+                try {{
+                    if (window.textsecure && window.textsecure.storage && window.textsecure.storage.user) {{
+                        ourId = window.textsecure.storage.user.getNumber();
+                    }}
+                }} catch(e) {{}}
+                if (!ourId) {{
+                    try {{
+                        const state = window.inboxStore.getState();
+                        if (state && state.user && state.user.ourNumber) {{
+                            ourId = state.user.ourNumber;
+                        }}
+                    }} catch(e) {{}}
+                }}
+
                 // Check if we're admin
                 const admins = convo.get('groupAdmins') || [];
-                const ourId = window.textsecure.storage.user.getNumber();
-                if (!admins.includes(ourId)) throw new Error('You must be an admin to remove members');
+                if (!ourId || !admins.includes(ourId)) throw new Error('You must be an admin to remove members');
 
                 await convo.removeMembers(['{session_id}']);
                 return true;
@@ -421,10 +489,25 @@ class SessionCDP:
                 const type = convo.get('type');
                 if (type !== 'group' && type !== 'groupv2') throw new Error('Not a group');
 
+                // Get our Session ID safely
+                let ourId = null;
+                try {{
+                    if (window.textsecure && window.textsecure.storage && window.textsecure.storage.user) {{
+                        ourId = window.textsecure.storage.user.getNumber();
+                    }}
+                }} catch(e) {{}}
+                if (!ourId) {{
+                    try {{
+                        const state = window.inboxStore.getState();
+                        if (state && state.user && state.user.ourNumber) {{
+                            ourId = state.user.ourNumber;
+                        }}
+                    }} catch(e) {{}}
+                }}
+
                 // Check if we're admin
                 const admins = convo.get('groupAdmins') || [];
-                const ourId = window.textsecure.storage.user.getNumber();
-                if (!admins.includes(ourId)) throw new Error('You must be an admin to promote members');
+                if (!ourId || !admins.includes(ourId)) throw new Error('You must be an admin to promote members');
 
                 // Check if user is a member
                 const members = convo.get('members') || [];
@@ -457,10 +540,25 @@ class SessionCDP:
                 const type = convo.get('type');
                 if (type !== 'group' && type !== 'groupv2') throw new Error('Not a group');
 
+                // Get our Session ID safely
+                let ourId = null;
+                try {{
+                    if (window.textsecure && window.textsecure.storage && window.textsecure.storage.user) {{
+                        ourId = window.textsecure.storage.user.getNumber();
+                    }}
+                }} catch(e) {{}}
+                if (!ourId) {{
+                    try {{
+                        const state = window.inboxStore.getState();
+                        if (state && state.user && state.user.ourNumber) {{
+                            ourId = state.user.ourNumber;
+                        }}
+                    }} catch(e) {{}}
+                }}
+
                 // Check if we're admin
                 const admins = convo.get('groupAdmins') || [];
-                const ourId = window.textsecure.storage.user.getNumber();
-                if (!admins.includes(ourId)) throw new Error('You must be an admin to demote members');
+                if (!ourId || !admins.includes(ourId)) throw new Error('You must be an admin to demote members');
 
                 // Check if user is admin
                 if (!admins.includes('{session_id}')) throw new Error('User is not an admin');
@@ -542,10 +640,25 @@ class SessionCDP:
                 const type = convo.get('type');
                 if (type !== 'group' && type !== 'groupv2') throw new Error('Not a group');
 
+                // Get our Session ID safely
+                let ourId = null;
+                try {{
+                    if (window.textsecure && window.textsecure.storage && window.textsecure.storage.user) {{
+                        ourId = window.textsecure.storage.user.getNumber();
+                    }}
+                }} catch(e) {{}}
+                if (!ourId) {{
+                    try {{
+                        const state = window.inboxStore.getState();
+                        if (state && state.user && state.user.ourNumber) {{
+                            ourId = state.user.ourNumber;
+                        }}
+                    }} catch(e) {{}}
+                }}
+
                 // Check if we're admin
                 const admins = convo.get('groupAdmins') || [];
-                const ourId = window.textsecure.storage.user.getNumber();
-                if (!admins.includes(ourId)) throw new Error('You must be an admin to rename the group');
+                if (!ourId || !admins.includes(ourId)) throw new Error('You must be an admin to rename the group');
 
                 await convo.setGroupName({name_escaped});
                 return true;

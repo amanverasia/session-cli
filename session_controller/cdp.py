@@ -605,16 +605,38 @@ class SessionCDP:
                 const type = convo.get('type');
                 if (type !== 'group' && type !== 'groupv2') throw new Error('Not a group');
 
-                // Use setNonPrivateNameNoCommit and then commit
+                // Set the name locally first
                 if (typeof convo.setNonPrivateNameNoCommit === 'function') {{
                     await convo.setNonPrivateNameNoCommit({name_escaped});
-                    if (typeof convo.commit === 'function') {{
-                        await convo.commit();
-                    }}
-                    return true;
                 }}
 
-                throw new Error('Rename method not available');
+                // Commit to local database
+                if (typeof convo.commit === 'function') {{
+                    await convo.commit();
+                }}
+
+                // Try to sync/update to network
+                // Look for sync methods
+                const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(convo))
+                    .filter(m => typeof convo[m] === 'function');
+
+                // Try various sync methods
+                if (typeof convo.updateGroupName === 'function') {{
+                    await convo.updateGroupName({name_escaped});
+                }} else if (typeof convo.sendGroupUpdate === 'function') {{
+                    await convo.sendGroupUpdate();
+                }} else if (typeof convo.triggerUIRefresh === 'function') {{
+                    await convo.triggerUIRefresh();
+                }} else if (typeof convo.forceSyncConfigurationNowIfNeeded === 'function') {{
+                    await convo.forceSyncConfigurationNowIfNeeded();
+                }}
+
+                // Try to trigger a UI refresh
+                if (window.Whisper && window.Whisper.events) {{
+                    window.Whisper.events.trigger('refreshConversation', convo.id);
+                }}
+
+                return true;
             }})()
         """)
         return result is True

@@ -640,67 +640,24 @@ class SessionCDP:
         """
         Create a new group.
 
+        Note: This is not currently supported via CDP. Session Desktop does not
+        expose a group creation API. Use the Session GUI to create groups.
+
         Args:
             name: Name for the new group
             members: List of Session IDs to add as members
 
         Returns:
             The new group's conversation ID, or None if failed
+
+        Raises:
+            NotImplementedError: Always, as this feature is not available via CDP
         """
-        members_json = json.dumps(members)
-        name_escaped = json.dumps(name)
-
-        return self.evaluate(f"""
-            (async function() {{
-                const members = {members_json};
-                const name = {name_escaped};
-
-                // Try different APIs for creating groups
-                // Method 1: Use libsession or Session's group creation utilities
-                if (window.libsession && window.libsession.createGroup) {{
-                    const group = await window.libsession.createGroup(name, members);
-                    if (group) return group.id || group;
-                }}
-
-                // Method 2: Try SessionClosedGroupV2 creation
-                if (window.SessionClosedGroupV2) {{
-                    const group = await window.SessionClosedGroupV2.createClosedGroup(name, members);
-                    if (group) return group;
-                }}
-
-                // Method 3: Try using the conversations store actions
-                if (window.inboxStore) {{
-                    const actions = window.inboxStore.dispatch;
-                    // Try to find createGroup action
-                }}
-
-                // Method 4: Try require for group creation module
-                try {{
-                    const groupUtils = require('./ts/session/group');
-                    if (groupUtils && groupUtils.createClosedGroup) {{
-                        const groupId = await groupUtils.createClosedGroup(name, members);
-                        if (groupId) return groupId;
-                    }}
-                }} catch(e) {{}}
-
-                // Method 5: Try ClosedGroup module
-                try {{
-                    const ClosedGroup = require('./ts/session/group/closed-group');
-                    if (ClosedGroup && ClosedGroup.createClosedGroup) {{
-                        const groupId = await ClosedGroup.createClosedGroup(name, members);
-                        if (groupId) return groupId;
-                    }}
-                }} catch(e) {{}}
-
-                // Method 6: Try direct window functions
-                if (typeof window.createClosedGroup === 'function') {{
-                    const groupId = await window.createClosedGroup(name, members);
-                    if (groupId) return groupId;
-                }}
-
-                throw new Error('Group creation API not found. This feature may require a newer version of Session Desktop.');
-            }})()
-        """)
+        raise NotImplementedError(
+            "Group creation is not supported via CDP. "
+            "Session Desktop does not expose this API. "
+            "Please use the Session GUI to create groups."
+        )
 
     def rename_group(self, group_id: str, new_name: str) -> bool:
         """

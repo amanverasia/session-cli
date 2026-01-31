@@ -162,12 +162,6 @@ session-cli group leave <group_id>
 session-cli group leave <group_id> --yes  # Skip confirmation
 ```
 
-Create a new group:
-
-```bash
-session-cli group create "Group Name" 05abc123... 05def456...
-```
-
 Rename a group (requires admin):
 
 ```bash
@@ -315,7 +309,6 @@ session-backup-20260130_123456/
 | `group promote <id> <sid>` | Promote member to admin (requires CDP) |
 | `group demote <id> <sid>` | Demote admin to member (requires CDP) |
 | `group leave <id>` | Leave a group (requires CDP) |
-| `group create <name> <ids>` | Create a new group (requires CDP) |
 | `group rename <id> <name>` | Rename a group (requires CDP) |
 | `repl` | Start interactive REPL mode |
 | `info` | Show Session information |
@@ -426,8 +419,8 @@ with SessionCDP(port=9222) as cdp:
     cdp.promote_to_admin("group_id", "05abc...")  # Promote to admin
     cdp.demote_admin("group_id", "05abc...")  # Demote admin
     cdp.leave_group("group_id")  # Leave group
-    new_id = cdp.create_group("Name", ["05abc...", "05def..."])  # Create group
     cdp.rename_group("group_id", "New Name")  # Rename group
+    # Note: Group creation is not supported via CDP (use Session GUI)
 
     # Get Redux state
     state = cdp.get_redux_state()
@@ -451,7 +444,7 @@ session> send <id> Hello!  # Send message (connects CDP)
 session> search keyword    # Search messages
 session> requests          # Show pending requests
 session> accept <id>       # Accept request
-session> group members <id>  # List group members
+session> group members <id>    # List group members
 session> group add <id> <sid>  # Add member to group
 session> info              # Show session info
 session> json on           # Toggle JSON output
@@ -554,6 +547,7 @@ Session/
 - **Sending messages**: Requires Session running with CDP enabled
 - **Database writes**: Read-only access prevents data corruption
 - **Attachment uploads**: Use Session GUI for sending attachments
+- **Group creation**: Not available via CDP, use Session GUI
 - **Windows**: Not currently supported (macOS/Linux only)
 
 ## Security

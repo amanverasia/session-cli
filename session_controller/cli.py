@@ -892,27 +892,10 @@ def cmd_group_leave(args):
 
 def cmd_group_create(args):
     """Create a new group."""
-    cdp = _connect_cdp(args.port)
-
-    try:
-        members = args.members
-        print(f"Creating group '{args.name}' with {len(members)} member(s)...")
-
-        group_id = cdp.create_group(args.name, members)
-        if group_id:
-            print(f"✓ Created group '{args.name}'")
-            print(f"  Group ID: {group_id}")
-
-            if args.json:
-                print(json.dumps({"id": group_id, "name": args.name, "members": members}, indent=2))
-        else:
-            print("✗ Failed to create group")
-            return 1
-    except RuntimeError as e:
-        print(f"✗ Error: {e}")
-        return 1
-    finally:
-        cdp.close()
+    print("✗ Group creation is not supported via CLI.")
+    print("  Session Desktop does not expose this API.")
+    print("  Please use the Session GUI to create groups.")
+    return 1
 
 
 def cmd_group_rename(args):

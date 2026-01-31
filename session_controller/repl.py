@@ -594,22 +594,9 @@ class SessionREPL(cmd.Cmd):
 
     def _group_create(self, args: list[str]) -> bool:
         """Create a new group."""
-        if len(args) < 2:
-            print("Usage: group create <name> <session_id> [session_id...]")
-            return False
-
-        name = args[0]
-        members = args[1:]
-        try:
-            print(f"Creating group '{name}' with {len(members)} member(s)...")
-            group_id = self.cdp.create_group(name, members)
-            if group_id:
-                print(f"Created group '{name}'")
-                print(f"Group ID: {group_id}")
-            else:
-                print("Failed to create group")
-        except Exception as e:
-            print(f"Error: {e}")
+        print("Group creation is not supported via CLI.")
+        print("Session Desktop does not expose this API.")
+        print("Please use the Session GUI to create groups.")
         return False
 
     def _group_rename(self, args: list[str]) -> bool:

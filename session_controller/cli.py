@@ -486,6 +486,104 @@ def cmd_info(args):
         print(f"    Start with: {SessionCDP.get_launch_command(args.port)}")
 
 
+def cmd_stats(args):
+    """Show messaging statistics."""
+    config = SessionConfig(profile=args.profile)
+
+    # Parse time filter
+    after_timestamp = None
+    if args.period:
+        with SessionDatabase(config) as db:
+            try:
+                after_timestamp = db.parse_date_filter(args.period)
+            except ValueError as e:
+                print(f"Invalid period: {e}")
+                return 1
+
+    with SessionDatabase(config) as db:
+        # Get stats for specific conversation or all
+        stats = db.get_stats(
+            conversation_id=args.conversation,
+            after_timestamp=after_timestamp,
+        )
+
+        if args.json:
+            output = {"stats": stats}
+            if args.top:
+                output["top_conversations"] = db.get_top_conversations(
+                    limit=args.top,
+                    after_timestamp=after_timestamp,
+                )
+            if args.activity:
+                output["activity"] = db.get_activity_by_date(
+                    conversation_id=args.conversation,
+                    after_timestamp=after_timestamp,
+                    group_by=args.activity,
+                )
+            print(json.dumps(output, indent=2))
+            return
+
+        # Print header
+        period_str = f" (last {args.period})" if args.period else ""
+        if args.conversation:
+            print(f"Statistics for conversation{period_str}:\n")
+        else:
+            print(f"Session Statistics{period_str}:\n")
+
+        # Overview
+        print("Overview:")
+        print(f"  Total messages: {stats['total_messages']:,}")
+        print(f"    Sent: {stats['sent']:,}")
+        print(f"    Received: {stats['received']:,}")
+        print(f"  With attachments: {stats['with_attachments']:,}")
+
+        if not args.conversation:
+            print(f"\n  Conversations: {stats['conversations']}")
+            if stats['private_conversations'] is not None:
+                print(f"    Private: {stats['private_conversations']}")
+                print(f"    Groups: {stats['group_conversations']}")
+
+        if stats['first_message']:
+            print(f"\n  First message: {stats['first_message'][:10]}")
+            print(f"  Last message: {stats['last_message'][:10]}")
+            print(f"  Days span: {stats['days_span']}")
+            print(f"  Avg messages/day: {stats['avg_per_day']}")
+
+        # Busiest hours
+        if stats['by_hour']:
+            print("\nBusiest hours:")
+            sorted_hours = sorted(stats['by_hour'].items(), key=lambda x: x[1], reverse=True)[:5]
+            for hour, count in sorted_hours:
+                print(f"  {hour:02d}:00 - {count:,} messages")
+
+        # Busiest days
+        if stats['by_day']:
+            print("\nBusiest days:")
+            sorted_days = sorted(stats['by_day'].items(), key=lambda x: x[1], reverse=True)
+            for day, count in sorted_days:
+                print(f"  {day}: {count:,}")
+
+        # Top conversations
+        if args.top and not args.conversation:
+            print(f"\nTop {args.top} conversations:")
+            top = db.get_top_conversations(limit=args.top, after_timestamp=after_timestamp)
+            for i, convo in enumerate(top, 1):
+                print(f"  {i}. {convo['name']} ({convo['type']})")
+                print(f"     {convo['message_count']:,} messages (sent: {convo['sent']}, received: {convo['received']})")
+
+        # Activity breakdown
+        if args.activity:
+            print(f"\nActivity by {args.activity}:")
+            activity = db.get_activity_by_date(
+                conversation_id=args.conversation,
+                after_timestamp=after_timestamp,
+                group_by=args.activity,
+            )
+            for row in activity[:20]:  # Show last 20 periods
+                bar = "█" * min(50, row['total'] // 10)  # Simple bar chart
+                print(f"  {row['period']}: {row['total']:,} {bar}")
+
+
 def cmd_export(args):
     """Export a conversation to file."""
     config = SessionConfig(profile=args.profile)
@@ -1113,6 +1211,24 @@ def main():
     # info
     info_parser = subparsers.add_parser("info", help="Show Session info")
     info_parser.set_defaults(func=cmd_info)
+
+    # stats
+    stats_parser = subparsers.add_parser("stats", help="Show messaging statistics")
+    stats_parser.add_argument(
+        "--conversation", "-c", help="Stats for specific conversation ID or name"
+    )
+    stats_parser.add_argument(
+        "--period", "-p", help="Time period (e.g., '7d', '30d', '1m', 'today')"
+    )
+    stats_parser.add_argument(
+        "--top", "-t", type=int, help="Show top N most active conversations"
+    )
+    stats_parser.add_argument(
+        "--activity", "-a",
+        choices=["day", "week", "month"],
+        help="Show activity breakdown by time period"
+    )
+    stats_parser.set_defaults(func=cmd_stats)
 
     # requests
     requests_parser = subparsers.add_parser("requests", help="List pending requests")

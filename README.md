@@ -208,6 +208,40 @@ Block a request:
 session-cli block-request 05abc123...
 ```
 
+### View Statistics
+
+Show overall messaging statistics:
+
+```bash
+session-cli stats
+```
+
+Show top 10 most active conversations:
+
+```bash
+session-cli stats --top 10
+```
+
+Stats for a specific time period:
+
+```bash
+session-cli stats --period 30d              # Last 30 days
+session-cli stats --period 7d --top 5       # Top 5 in last week
+```
+
+Activity breakdown by day/week/month:
+
+```bash
+session-cli stats --activity day            # Messages per day
+session-cli stats --activity week           # Messages per week
+```
+
+Stats for a specific conversation:
+
+```bash
+session-cli stats --conversation 05abc123...
+```
+
 ### Download Media
 
 ```bash
@@ -304,6 +338,7 @@ session-backup-20260130_123456/
 | `group demote <id> <sid>` | Demote admin to member (requires CDP) |
 | `group leave <id>` | Leave a group (requires CDP) |
 | `repl` | Start interactive REPL mode |
+| `stats` | Show messaging statistics |
 | `info` | Show Session information |
 
 ## Python API

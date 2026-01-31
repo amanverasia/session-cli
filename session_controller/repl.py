@@ -408,6 +408,79 @@ class SessionREPL(cmd.Cmd):
             print(f"Error: {e}")
         return False
 
+    def do_stats(self, arg: str) -> bool:
+        """
+        Show messaging statistics. Usage: stats [options]
+
+        Options:
+          --top N       Show top N most active conversations
+          --period Xd   Filter to last X days (e.g., 7d, 30d)
+        """
+        args = shlex.split(arg) if arg else []
+
+        top = None
+        period = None
+
+        # Parse simple arguments
+        i = 0
+        while i < len(args):
+            if args[i] == "--top" and i + 1 < len(args):
+                top = int(args[i + 1])
+                i += 2
+            elif args[i] == "--period" and i + 1 < len(args):
+                period = args[i + 1]
+                i += 2
+            else:
+                i += 1
+
+        try:
+            # Parse period if specified
+            after_timestamp = None
+            if period:
+                after_timestamp = self.db.parse_date_filter(period)
+
+            stats = self.db.get_stats(after_timestamp=after_timestamp)
+
+            if self.json_output:
+                output = {"stats": stats}
+                if top:
+                    output["top_conversations"] = self.db.get_top_conversations(
+                        limit=top, after_timestamp=after_timestamp
+                    )
+                print(json.dumps(output, indent=2))
+                return False
+
+            period_str = f" (last {period})" if period else ""
+            print(f"Session Statistics{period_str}:\n")
+
+            print("Overview:")
+            print(f"  Total messages: {stats['total_messages']:,}")
+            print(f"    Sent: {stats['sent']:,}")
+            print(f"    Received: {stats['received']:,}")
+            print(f"  With attachments: {stats['with_attachments']:,}")
+            print(f"\n  Conversations: {stats['conversations']}")
+
+            if stats['first_message']:
+                print(f"\n  First message: {stats['first_message'][:10]}")
+                print(f"  Last message: {stats['last_message'][:10]}")
+                print(f"  Avg messages/day: {stats['avg_per_day']}")
+
+            if stats['by_hour']:
+                print("\nBusiest hours:")
+                sorted_hours = sorted(stats['by_hour'].items(), key=lambda x: x[1], reverse=True)[:5]
+                for hour, count in sorted_hours:
+                    print(f"  {hour:02d}:00 - {count:,} messages")
+
+            if top:
+                print(f"\nTop {top} conversations:")
+                top_convos = self.db.get_top_conversations(limit=top, after_timestamp=after_timestamp)
+                for i, convo in enumerate(top_convos, 1):
+                    print(f"  {i}. {convo['name']} - {convo['message_count']:,} messages")
+
+        except Exception as e:
+            print(f"Error: {e}")
+        return False
+
     # === Group Management Commands ===
 
     def do_group(self, arg: str) -> bool:

@@ -740,6 +740,255 @@ class SessionDatabase:
             self._attachment_key = key
         return self._attachment_key
 
+    # === Statistics ===
+
+    def get_stats(
+        self,
+        conversation_id: Optional[str] = None,
+        after_timestamp: Optional[int] = None,
+        before_timestamp: Optional[int] = None,
+    ) -> dict:
+        """
+        Get message statistics.
+
+        Args:
+            conversation_id: Filter to specific conversation (optional)
+            after_timestamp: Only count messages after this time (ms)
+            before_timestamp: Only count messages before this time (ms)
+
+        Returns:
+            Dict with statistics
+        """
+        conn = self._get_connection()
+
+        # Build WHERE clause
+        conditions = []
+        params = []
+
+        if conversation_id:
+            conditions.append("conversationId = ?")
+            params.append(conversation_id)
+        if after_timestamp:
+            conditions.append("sent_at >= ?")
+            params.append(after_timestamp)
+        if before_timestamp:
+            conditions.append("sent_at <= ?")
+            params.append(before_timestamp)
+
+        where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
+
+        # Total message counts
+        cursor = conn.execute(f"""
+            SELECT
+                COUNT(*) as total,
+                SUM(CASE WHEN type = 'outgoing' THEN 1 ELSE 0 END) as sent,
+                SUM(CASE WHEN type = 'incoming' THEN 1 ELSE 0 END) as received,
+                SUM(CASE WHEN hasAttachments = 1 THEN 1 ELSE 0 END) as with_attachments,
+                MIN(sent_at) as first_message,
+                MAX(sent_at) as last_message
+            FROM messages
+            {where_clause}
+        """, params)
+
+        row = cursor.fetchone()
+        total, sent, received, with_attachments, first_ts, last_ts = row
+
+        # Conversation count
+        if not conversation_id:
+            cursor = conn.execute("""
+                SELECT COUNT(*) FROM conversations WHERE active_at > 0
+            """)
+            convo_count = cursor.fetchone()[0]
+
+            cursor = conn.execute("""
+                SELECT
+                    SUM(CASE WHEN type = 'private' THEN 1 ELSE 0 END) as private,
+                    SUM(CASE WHEN type IN ('group', 'groupv2') THEN 1 ELSE 0 END) as groups
+                FROM conversations WHERE active_at > 0
+            """)
+            private_count, group_count = cursor.fetchone()
+        else:
+            convo_count = 1
+            private_count = None
+            group_count = None
+
+        # Messages by hour of day
+        cursor = conn.execute(f"""
+            SELECT
+                CAST(strftime('%H', sent_at / 1000, 'unixepoch', 'localtime') AS INTEGER) as hour,
+                COUNT(*) as count
+            FROM messages
+            {where_clause}
+            GROUP BY hour
+            ORDER BY hour
+        """, params)
+
+        by_hour = {row[0]: row[1] for row in cursor}
+
+        # Messages by day of week (0=Sunday, 6=Saturday)
+        cursor = conn.execute(f"""
+            SELECT
+                CAST(strftime('%w', sent_at / 1000, 'unixepoch', 'localtime') AS INTEGER) as dow,
+                COUNT(*) as count
+            FROM messages
+            {where_clause}
+            GROUP BY dow
+            ORDER BY dow
+        """, params)
+
+        day_names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+        by_day = {day_names[row[0]]: row[1] for row in cursor}
+
+        # Calculate date range
+        if first_ts and last_ts:
+            first_date = datetime.fromtimestamp(first_ts / 1000)
+            last_date = datetime.fromtimestamp(last_ts / 1000)
+            days_span = max(1, (last_date - first_date).days)
+            avg_per_day = round(total / days_span, 1) if total else 0
+        else:
+            first_date = None
+            last_date = None
+            days_span = 0
+            avg_per_day = 0
+
+        return {
+            "total_messages": total or 0,
+            "sent": sent or 0,
+            "received": received or 0,
+            "with_attachments": with_attachments or 0,
+            "conversations": convo_count or 0,
+            "private_conversations": private_count,
+            "group_conversations": group_count,
+            "first_message": first_date.isoformat() if first_date else None,
+            "last_message": last_date.isoformat() if last_date else None,
+            "days_span": days_span,
+            "avg_per_day": avg_per_day,
+            "by_hour": by_hour,
+            "by_day": by_day,
+        }
+
+    def get_top_conversations(
+        self,
+        limit: int = 10,
+        after_timestamp: Optional[int] = None,
+    ) -> list[dict]:
+        """
+        Get most active conversations by message count.
+
+        Args:
+            limit: Number of conversations to return
+            after_timestamp: Only count messages after this time (ms)
+
+        Returns:
+            List of dicts with conversation info and message count
+        """
+        conn = self._get_connection()
+
+        time_filter = ""
+        params = []
+        if after_timestamp:
+            time_filter = "AND m.sent_at >= ?"
+            params.append(after_timestamp)
+
+        params.append(limit)
+
+        cursor = conn.execute(f"""
+            SELECT
+                c.id,
+                c.type,
+                c.displayNameInProfile,
+                c.nickname,
+                COUNT(m.id) as message_count,
+                SUM(CASE WHEN m.type = 'outgoing' THEN 1 ELSE 0 END) as sent,
+                SUM(CASE WHEN m.type = 'incoming' THEN 1 ELSE 0 END) as received,
+                MAX(m.sent_at) as last_message_at
+            FROM conversations c
+            LEFT JOIN messages m ON c.id = m.conversationId
+            WHERE c.active_at > 0 {time_filter}
+            GROUP BY c.id
+            ORDER BY message_count DESC
+            LIMIT ?
+        """, params)
+
+        results = []
+        for row in cursor:
+            id, type, display_name, nickname, count, sent, received, last_at = row
+            name = nickname or display_name or id[:8]
+            results.append({
+                "id": id,
+                "name": name,
+                "type": type,
+                "message_count": count or 0,
+                "sent": sent or 0,
+                "received": received or 0,
+                "last_message_at": datetime.fromtimestamp(last_at / 1000).isoformat() if last_at else None,
+            })
+
+        return results
+
+    def get_activity_by_date(
+        self,
+        conversation_id: Optional[str] = None,
+        after_timestamp: Optional[int] = None,
+        before_timestamp: Optional[int] = None,
+        group_by: str = "day",  # "day", "week", "month"
+    ) -> list[dict]:
+        """
+        Get message activity grouped by date.
+
+        Args:
+            conversation_id: Filter to specific conversation
+            after_timestamp: Only count messages after this time (ms)
+            before_timestamp: Only count messages before this time (ms)
+            group_by: "day", "week", or "month"
+
+        Returns:
+            List of dicts with date and counts
+        """
+        conn = self._get_connection()
+
+        # Build WHERE clause
+        conditions = []
+        params = []
+
+        if conversation_id:
+            conditions.append("conversationId = ?")
+            params.append(conversation_id)
+        if after_timestamp:
+            conditions.append("sent_at >= ?")
+            params.append(after_timestamp)
+        if before_timestamp:
+            conditions.append("sent_at <= ?")
+            params.append(before_timestamp)
+
+        where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
+
+        # Date format based on grouping
+        if group_by == "month":
+            date_format = "%Y-%m"
+        elif group_by == "week":
+            date_format = "%Y-W%W"
+        else:  # day
+            date_format = "%Y-%m-%d"
+
+        cursor = conn.execute(f"""
+            SELECT
+                strftime('{date_format}', sent_at / 1000, 'unixepoch', 'localtime') as period,
+                COUNT(*) as total,
+                SUM(CASE WHEN type = 'outgoing' THEN 1 ELSE 0 END) as sent,
+                SUM(CASE WHEN type = 'incoming' THEN 1 ELSE 0 END) as received
+            FROM messages
+            {where_clause}
+            GROUP BY period
+            ORDER BY period DESC
+            LIMIT 100
+        """, params)
+
+        return [
+            {"period": row[0], "total": row[1], "sent": row[2], "received": row[3]}
+            for row in cursor
+        ]
+
     def decrypt_attachment(self, filename: str) -> bytes:
         """
         Decrypt an attachment file.

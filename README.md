@@ -162,12 +162,6 @@ session-cli group leave <group_id>
 session-cli group leave <group_id> --yes  # Skip confirmation
 ```
 
-Rename a group (requires admin):
-
-```bash
-session-cli group rename <group_id> "New Group Name"
-```
-
 ### Manage Requests
 
 List pending requests:
@@ -309,7 +303,6 @@ session-backup-20260130_123456/
 | `group promote <id> <sid>` | Promote member to admin (requires CDP) |
 | `group demote <id> <sid>` | Demote admin to member (requires CDP) |
 | `group leave <id>` | Leave a group (requires CDP) |
-| `group rename <id> <name>` | Rename a group (requires CDP) |
 | `repl` | Start interactive REPL mode |
 | `info` | Show Session information |
 
@@ -419,8 +412,7 @@ with SessionCDP(port=9222) as cdp:
     cdp.promote_to_admin("group_id", "05abc...")  # Promote to admin
     cdp.demote_admin("group_id", "05abc...")  # Demote admin
     cdp.leave_group("group_id")  # Leave group
-    cdp.rename_group("group_id", "New Name")  # Rename group
-    # Note: Group creation is not supported via CDP (use Session GUI)
+    # Note: Group creation/rename not supported via CDP (use Session GUI)
 
     # Get Redux state
     state = cdp.get_redux_state()
@@ -547,7 +539,7 @@ Session/
 - **Sending messages**: Requires Session running with CDP enabled
 - **Database writes**: Read-only access prevents data corruption
 - **Attachment uploads**: Use Session GUI for sending attachments
-- **Group creation**: Not available via CDP, use Session GUI
+- **Group creation/rename**: Not available via CDP, use Session GUI
 - **Windows**: Not currently supported (macOS/Linux only)
 
 ## Security

@@ -589,57 +589,23 @@ class SessionCDP:
         """
         Rename a group.
 
+        Note: This is not currently supported via CDP. Session Desktop does not
+        expose a network-sync API for group renames. Use the Session GUI.
+
+        TODO: Investigate Session's group update protocol for future implementation.
+
         Args:
             group_id: The group conversation ID
             new_name: New name for the group
 
-        Returns:
-            True if group was renamed successfully
+        Raises:
+            NotImplementedError: Always, as this feature is not available via CDP
         """
-        name_escaped = json.dumps(new_name)
-
-        result = self.evaluate(f"""
-            (async function() {{
-                const convo = window.getConversationController().get('{group_id}');
-                if (!convo) throw new Error('Group not found');
-                const type = convo.get('type');
-                if (type !== 'group' && type !== 'groupv2') throw new Error('Not a group');
-
-                // Set the name locally first
-                if (typeof convo.setNonPrivateNameNoCommit === 'function') {{
-                    await convo.setNonPrivateNameNoCommit({name_escaped});
-                }}
-
-                // Commit to local database
-                if (typeof convo.commit === 'function') {{
-                    await convo.commit();
-                }}
-
-                // Try to sync/update to network
-                // Look for sync methods
-                const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(convo))
-                    .filter(m => typeof convo[m] === 'function');
-
-                // Try various sync methods
-                if (typeof convo.updateGroupName === 'function') {{
-                    await convo.updateGroupName({name_escaped});
-                }} else if (typeof convo.sendGroupUpdate === 'function') {{
-                    await convo.sendGroupUpdate();
-                }} else if (typeof convo.triggerUIRefresh === 'function') {{
-                    await convo.triggerUIRefresh();
-                }} else if (typeof convo.forceSyncConfigurationNowIfNeeded === 'function') {{
-                    await convo.forceSyncConfigurationNowIfNeeded();
-                }}
-
-                // Try to trigger a UI refresh
-                if (window.Whisper && window.Whisper.events) {{
-                    window.Whisper.events.trigger('refreshConversation', convo.id);
-                }}
-
-                return true;
-            }})()
-        """)
-        return result is True
+        raise NotImplementedError(
+            "Group renaming is not supported via CDP. "
+            "Session Desktop does not expose this API for network sync. "
+            "Please use the Session GUI to rename groups."
+        )
 
     # === Utility ===
 

@@ -601,28 +601,9 @@ class SessionREPL(cmd.Cmd):
 
     def _group_rename(self, args: list[str]) -> bool:
         """Rename a group."""
-        if len(args) < 2:
-            print("Usage: group rename <group_id> <new_name>")
-            return False
-
-        group_id = args[0]
-        new_name = " ".join(args[1:])  # Allow spaces in name
-        try:
-            # Get current info
-            info = self.cdp.get_group_members(group_id)
-            if not info:
-                print(f"Group not found: {group_id}")
-                return False
-
-            old_name = info['name']
-            print(f"Renaming group '{old_name}' to '{new_name}'...")
-            result = self.cdp.rename_group(group_id, new_name)
-            if result:
-                print(f"Renamed group to '{new_name}'")
-            else:
-                print("Failed to rename group")
-        except Exception as e:
-            print(f"Error: {e}")
+        print("Group renaming is not supported via CLI.")
+        print("Session Desktop does not expose this API for network sync.")
+        print("Please use the Session GUI to rename groups.")
         return False
 
     def complete_group(self, text: str, line: str, begidx: int, endidx: int) -> list[str]:

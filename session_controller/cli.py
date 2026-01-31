@@ -900,29 +900,10 @@ def cmd_group_create(args):
 
 def cmd_group_rename(args):
     """Rename a group."""
-    cdp = _connect_cdp(args.port)
-
-    try:
-        # Get current group info
-        info = cdp.get_group_members(args.id)
-        if not info:
-            print(f"Group not found: {args.id}")
-            return 1
-
-        old_name = info['name']
-        print(f"Renaming group '{old_name}' to '{args.name}'...")
-
-        result = cdp.rename_group(args.id, args.name)
-        if result:
-            print(f"✓ Renamed group to '{args.name}'")
-        else:
-            print("✗ Failed to rename group")
-            return 1
-    except RuntimeError as e:
-        print(f"✗ Error: {e}")
-        return 1
-    finally:
-        cdp.close()
+    print("✗ Group renaming is not supported via CLI.")
+    print("  Session Desktop does not expose this API for network sync.")
+    print("  Please use the Session GUI to rename groups.")
+    return 1
 
 
 def main():

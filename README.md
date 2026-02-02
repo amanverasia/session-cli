@@ -57,8 +57,19 @@ session-cli messages "friend name" --limit 10
 
 First, start Session with remote debugging enabled:
 
+**macOS:**
 ```bash
 /Applications/Session.app/Contents/MacOS/Session --remote-debugging-port=9222 --remote-allow-origins="*"
+```
+
+**Linux (AppImage):**
+```bash
+./session-desktop-linux-x86_64-*.AppImage --remote-debugging-port=9222 --remote-allow-origins="*"
+```
+
+**Linux (system install):**
+```bash
+session-desktop --remote-debugging-port=9222 --remote-allow-origins="*"
 ```
 
 Then send a message:

@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `--version` / `-v` flag to display package version
 
+## [1.5.2] - 2026-02-02
+
+### Documentation
+- Added Linux instructions for launching Session with CDP in README Quick Start section
+- Documented AppImage and system install methods for Linux users
+
 ## [1.5.1] - 2026-02-02
 
 ### Added

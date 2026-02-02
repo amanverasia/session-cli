@@ -4,10 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Session CLI is a Python CLI tool and library for programmatic control of Session Desktop (privacy-focused messenger). It operates in two modes:
+Session CLI is a Python CLI tool and library for programmatic control of Session Desktop (privacy-focused messenger). It operates in three modes:
 
 1. **Database Mode**: Read-only direct access to Session's SQLCipher database (offline)
 2. **CDP Mode**: Full control via Chrome DevTools Protocol (requires Session running with `--remote-debugging-port=9222 --remote-allow-origins="*"`)
+3. **MCP Server**: Model Context Protocol server exposing read-only data to AI agents (Claude Desktop, Claude Code)
 
 ## Build & Development Commands
 
@@ -38,6 +39,10 @@ session-cli group promote <id> <session_id> # promote to admin
 session-cli stats                          # messaging statistics
 session-cli stats --top 10 --period 30d    # top conversations in 30 days
 session-cli repl                           # interactive REPL mode
+
+# MCP server
+session-mcp                                # run MCP server (stdio transport)
+python -m session_mcp                      # run as module
 ```
 
 ## Architecture
@@ -52,6 +57,15 @@ session-cli repl                           # interactive REPL mode
 - **user_config.py**: User configuration file support (`~/.config/session-cli/config.yaml`), loads defaults for profile, port, command limits
 - **constants.py**: Centralized SQL queries and configuration values
 - **exceptions.py**: Custom exception hierarchy (`SessionError` base class)
+
+### MCP Server Package (`session_mcp/`)
+
+- **server.py**: FastMCP server setup, tool registration, stdio transport entry point
+- **tools/conversations.py**: `list_conversations`, `get_conversation`, `find_conversation`
+- **tools/messages.py**: `get_messages`, `search_messages`, `get_message`
+- **tools/requests.py**: `list_pending_requests`, `get_request`
+- **tools/stats.py**: `get_stats`, `get_top_conversations`, `get_activity`
+- **tools/utility.py**: `get_session_info`, `list_profiles`
 
 ### Design Patterns
 
@@ -73,6 +87,7 @@ Dataclasses (`Message`, `Conversation`, `Request`) with `raw` dict for JSON acce
 - **New CDP operation**: Add method to `SessionCDP` using `evaluate()` for JavaScript execution
 - **New REPL command**: Add `do_<command>` method to `SessionREPL` in `repl.py`
 - **New group operation**: Add CDP method in `cdp.py`, CLI handler in `cli.py`, REPL method in `repl.py`
+- **New MCP tool**: Add function decorated with `@mcp.tool()` in appropriate `session_mcp/tools/*.py` file
 
 ## Code Conventions
 
@@ -93,7 +108,7 @@ Dataclasses (`Message`, `Conversation`, `Request`) with `raw` dict for JSON acce
 - **Database is read-only** to prevent corruption
 - **CDP attachment sending** not implemented
 - **Group creation/rename** not supported via CDP (use Session GUI)
-- **Version sync**: Update version in `pyproject.toml`, `__init__.py`, and `constants.py`
+- **Version sync**: Update version in `pyproject.toml`, `session_controller/__init__.py`, `session_mcp/__init__.py`, and `constants.py`
 
 ## Session Desktop Integration
 
@@ -120,4 +135,34 @@ Dataclasses (`Message`, `Conversation`, `Request`) with `raw` dict for JSON acce
 **Linux (system install):**
 ```bash
 session-desktop --remote-debugging-port=9222 --remote-allow-origins="*"
+```
+
+## MCP Server Configuration
+
+### Claude Desktop
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `~/.config/Claude/claude_desktop_config.json` (Linux):
+
+```json
+{
+  "mcpServers": {
+    "session": {
+      "command": "session-mcp"
+    }
+  }
+}
+```
+
+### Claude Code
+
+Add to `.claude/settings.json` in your project:
+
+```json
+{
+  "mcpServers": {
+    "session": {
+      "command": "session-mcp"
+    }
+  }
+}
 ```

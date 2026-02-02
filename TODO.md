@@ -235,6 +235,20 @@ This document tracks planned features, improvements, and known issues.
 - [x] Added stats command to REPL mode
 - [x] Stats include: total messages, sent/received, attachments, busiest hours/days, averages
 
+### v1.6.0 (MCP Server)
+- [x] Added session_mcp package for Model Context Protocol server
+- [x] Added FastMCP-based server implementation
+- [x] Added MCP tools: list_conversations, get_conversation, find_conversation
+- [x] Added MCP tools: get_messages, search_messages, get_message
+- [x] Added MCP tools: list_pending_requests, get_request
+- [x] Added MCP tools: get_stats, get_top_conversations, get_activity
+- [x] Added MCP tools: get_session_info, list_profiles
+- [x] Added session-mcp CLI entry point
+- [x] Added support for running as `python -m session_mcp`
+- [x] Added fastmcp>=2.0.0 dependency
+- [x] Added Claude Desktop configuration documentation
+- [x] Added Claude Code configuration documentation
+
 ### Linux Platform Support
 - [x] Platform detection in config.py (`~/.config/Session/`)
 - [x] Database access on Linux (SQLCipher)

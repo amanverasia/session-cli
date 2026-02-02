@@ -10,6 +10,7 @@ A Python CLI tool and library for programmatic control of [Session Desktop](http
 
 - **Database Access**: Read messages, conversations, and attachments directly from Session's SQLCipher database
 - **CDP Control**: Send messages and control Session via Chrome DevTools Protocol
+- **MCP Server**: Expose Session data to AI agents via Model Context Protocol
 - **Group Management**: Add/remove members, promote/demote admins, leave groups
 - **Real-time Monitoring**: Watch for new messages in real-time
 - **Full-text Search**: Search across all messages using FTS5
@@ -655,10 +656,94 @@ black .
 
 This tool is for educational and personal use. Respect user privacy and only use on your own Session instances.
 
+## MCP Server
+
+Session CLI includes an MCP (Model Context Protocol) server that exposes read-only Session data to AI agents like Claude Desktop and Claude Code.
+
+### Running the MCP Server
+
+```bash
+# Run directly
+session-mcp
+
+# Or as a Python module
+python -m session_mcp
+```
+
+### Claude Desktop Configuration
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `~/.config/Claude/claude_desktop_config.json` (Linux):
+
+```json
+{
+  "mcpServers": {
+    "session": {
+      "command": "session-mcp"
+    }
+  }
+}
+```
+
+Or with a specific Python environment:
+
+```json
+{
+  "mcpServers": {
+    "session": {
+      "command": "python",
+      "args": ["-m", "session_mcp"]
+    }
+  }
+}
+```
+
+### Claude Code Configuration
+
+Add to `.claude/settings.json` in your project or global settings:
+
+```json
+{
+  "mcpServers": {
+    "session": {
+      "command": "session-mcp"
+    }
+  }
+}
+```
+
+### Available MCP Tools
+
+| Tool | Description |
+|------|-------------|
+| `list_conversations` | List all conversations with metadata |
+| `get_conversation` | Get details of a specific conversation |
+| `find_conversation` | Find conversation by name or partial ID |
+| `get_messages` | Get messages from a conversation |
+| `search_messages` | Search across all messages with filters |
+| `get_message` | Get a specific message by ID |
+| `list_pending_requests` | List contact/message requests |
+| `get_request` | Get details of a specific request |
+| `get_stats` | Get messaging statistics |
+| `get_top_conversations` | Get most active conversations |
+| `get_activity` | Get activity breakdown by date |
+| `get_session_info` | Session ID, data path, status |
+| `list_profiles` | List available Session profiles |
+
+### Example Usage with Claude
+
+Once configured, you can ask Claude questions like:
+
+- "List my Session conversations"
+- "Search my messages for 'meeting' from the last 7 days"
+- "Show my messaging statistics for this month"
+- "What pending message requests do I have?"
+- "Find my conversation with John"
+
 ## Related
 
 - [Session Desktop](https://getsession.org/) - Privacy-focused messaging app
 - [Session Protocol](https://docs.session.org/) - Technical documentation
+- [Model Context Protocol](https://modelcontextprotocol.io/) - MCP specification
 
 ## Credits
 

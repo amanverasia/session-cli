@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "session-cli"
-version = "1.5.2"
+version = "1.6.0"
 description = "Python CLI tool and library for programmatic control of Session Desktop"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -15,7 +15,7 @@ authors = [
 maintainers = [
     {name = "Aman Verasia", email = "verasiaaman3@gmail.com"}
 ]
-keywords = ["session", "messenger", "desktop", "cli", "cdp", "sqlcipher", "privacy", "encryption"]
+keywords = ["session", "messenger", "desktop", "cli", "cdp", "sqlcipher", "privacy", "encryption", "mcp", "model-context-protocol"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -38,6 +38,7 @@ dependencies = [
     "websocket-client>=1.0.0",
     "pyaes>=1.6.0",
     "pyyaml>=6.0.0",
+    "fastmcp>=2.0.0",
 ]
 
 [project.optional-dependencies]
@@ -52,6 +53,7 @@ dev = [
 
 [project.scripts]
 session-cli = "session_controller.cli:main"
+session-mcp = "session_mcp:main"
 
 [project.urls]
 Homepage = "https://github.com/amanverasia/session-cli"
@@ -60,9 +62,12 @@ Repository = "https://github.com/amanverasia/session-cli"
 "Bug Reports" = "https://github.com/amanverasia/session-cli/issues"
 "Source" = "https://github.com/amanverasia/session-cli"
 
-[tool.setuptools]
-packages = ["session_controller"]
-package-data = {"session_controller" = ["py.typed"]}
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["session_controller*", "session_mcp*"]
+
+[tool.setuptools.package-data]
+session_controller = ["py.typed", "templates/*.html"]
 
 [tool.black]
 line-length = 100

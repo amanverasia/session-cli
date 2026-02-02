@@ -7,8 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-02-02
+
 ### Added
-- `--version` / `-v` flag to display package version
+- **MCP Server**: Model Context Protocol server for AI agent integration
+- New `session_mcp` package exposing read-only Session data to AI agents
+- `session-mcp` CLI command to run the MCP server
+- Support for running as `python -m session_mcp`
+- FastMCP-based server with stdio transport
+
+### MCP Tools
+- `list_conversations` - List all conversations with metadata
+- `get_conversation` - Get details of a specific conversation
+- `find_conversation` - Find conversation by name or partial ID
+- `get_messages` - Get messages from a conversation with pagination
+- `search_messages` - Search across messages with filters (date, conversation, sender)
+- `get_message` - Get a specific message by ID
+- `list_pending_requests` - List contact/message requests
+- `get_request` - Get details of a specific request
+- `get_stats` - Get messaging statistics
+- `get_top_conversations` - Get most active conversations
+- `get_activity` - Get activity breakdown by date
+- `get_session_info` - Session ID, data path, status
+- `list_profiles` - List available Session profiles
+
+### Dependencies
+- Added `fastmcp>=2.0.0` for MCP server implementation
+
+### Documentation
+- Added MCP Server section to README with configuration examples
+- Updated CLAUDE.md with MCP module documentation
+- Claude Desktop and Claude Code configuration examples
 
 ## [1.5.2] - 2026-02-02
 

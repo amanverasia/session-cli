@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-02-02
+
+### Added
+- **MCP Write Tools**: CDP-based actions for AI agents
+- New MCP tools requiring Session running with CDP:
+  - `send_message` - Send text messages
+  - `accept_request` - Accept pending requests
+  - `decline_request` - Decline requests without blocking
+  - `block_request` - Block and decline requests
+  - `add_group_member` - Add member to group
+  - `remove_group_member` - Remove member from group
+  - `promote_to_admin` - Promote member to admin
+  - `demote_admin` - Demote admin to member
+  - `leave_group` - Leave a group
+  - `mark_as_read` - Mark conversation as read
+  - `export_conversation` - Export to JSON/CSV/HTML
+
+### Documentation
+- Streamlined README (removed verbose examples, use `session-cli -h`)
+
 ## [1.6.0] - 2026-02-02
 
 ### Added

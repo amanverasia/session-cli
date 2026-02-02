@@ -7,8 +7,10 @@ This package contains tool implementations organized by domain:
 - requests: List pending contact/message requests
 - stats: Get messaging statistics
 - utility: Session info and status
+- actions: CDP-based write operations (send, accept, group management)
+- export: Export conversations to various formats
 """
 
-from . import conversations, messages, requests, stats, utility
+from . import conversations, messages, requests, stats, utility, actions, export
 
-__all__ = ["conversations", "messages", "requests", "stats", "utility"]
+__all__ = ["conversations", "messages", "requests", "stats", "utility", "actions", "export"]

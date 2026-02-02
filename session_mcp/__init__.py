@@ -26,7 +26,7 @@ Example usage with Claude Code:
     }
 """
 
-__version__ = "1.6.0"
+__version__ = "1.7.0"
 __author__ = "Session Controller Contributors"
 
 from .server import mcp, main

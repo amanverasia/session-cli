@@ -34,7 +34,7 @@ CLI Usage:
 For more information, see: https://github.com/amanverasia/session-cli
 """
 
-__version__ = "1.5.0"
+__version__ = "1.5.1"
 __author__ = "Session Controller Contributors"
 __license__ = "MIT"
 

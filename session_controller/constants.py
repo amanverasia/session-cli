@@ -10,7 +10,7 @@ from typing import Final
 
 # === Version Info ===
 PACKAGE_NAME: Final = "session-controller"
-VERSION: Final = "1.5.0"
+VERSION: Final = "1.5.1"
 
 
 # === SQL Queries ===

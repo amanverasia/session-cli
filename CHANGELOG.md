@@ -10,6 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `--version` / `-v` flag to display package version
 
+## [1.5.1] - 2026-02-02
+
+### Added
+- Verified and documented Linux platform support (tested on Pop!_OS 22.04 LTS)
+- Platform Support section in CLAUDE.md with explicit paths
+- Linux CDP launch instructions for AppImage and system installations
+
+### Documentation
+- Updated CLAUDE.md with Linux-specific information
+- Updated TODO.md to mark Linux support as completed
+- Added Linux setup instructions for Session Desktop AppImage
+
 ## [1.5.0] - 2026-01-31
 
 ### Added

@@ -81,9 +81,15 @@ Dataclasses (`Message`, `Conversation`, `Request`) with `raw` dict for JSON acce
 - Type hints encouraged, docstrings for public API
 - Conventional commits: `type(scope): subject` (feat, fix, docs, refactor, test, chore)
 
+## Platform Support
+
+- **macOS**: `~/Library/Application Support/Session/`
+- **Linux**: `~/.config/Session/` (tested on Pop!_OS 22.04 / Ubuntu)
+- **Windows**: Not yet implemented
+
 ## Known Limitations
 
-- **macOS and Linux only** (Windows not implemented)
+- **Windows not supported** yet (macOS and Linux fully supported)
 - **Database is read-only** to prevent corruption
 - **CDP attachment sending** not implemented
 - **Group creation/rename** not supported via CDP (use Session GUI)
@@ -98,3 +104,20 @@ Dataclasses (`Message`, `Conversation`, `Request`) with `raw` dict for JSON acce
 - CDP globals: `window.getConversationController()`, `window.inboxStore`
 - CDP group methods: `convo.addMembers()`, `convo.removeMembers()`, `convo.addAdmin()`, `convo.removeAdmin()`, `convo.leaveGroup()`
 - Note: `createGroup()` and `setGroupName()` don't sync to network - use Session GUI instead
+
+### Launching Session with CDP
+
+**macOS:**
+```bash
+/Applications/Session.app/Contents/MacOS/Session --remote-debugging-port=9222 --remote-allow-origins="*"
+```
+
+**Linux (AppImage):**
+```bash
+/path/to/session-desktop-linux-x86_64-*.AppImage --remote-debugging-port=9222 --remote-allow-origins="*"
+```
+
+**Linux (system install):**
+```bash
+session-desktop --remote-debugging-port=9222 --remote-allow-origins="*"
+```

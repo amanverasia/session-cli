@@ -8,7 +8,8 @@ This document tracks planned features, improvements, and known issues.
 - [ ] Add Windows platform support in `config.py`
 - [ ] Implement comprehensive test suite
 - [ ] Add CI/CD with GitHub Actions
-- [ ] Publish to PyPI
+- [x] Publish to PyPI - COMPLETED
+- [x] Linux platform support - COMPLETED (verified on Pop!_OS 22.04)
 
 ## Medium Priority
 
@@ -26,6 +27,7 @@ This document tracks planned features, improvements, and known issues.
 - [ ] Add video tutorials/gifs for common tasks
 - [ ] Document database schema in detail
 - [ ] Add Windows-specific setup instructions
+- [x] Linux setup instructions - COMPLETED (README.md)
 
 ### Features
 - [ ] Implement `cdp.py:send_attachment()` method
@@ -99,7 +101,6 @@ This document tracks planned features, improvements, and known issues.
 ## Known Issues
 
 ### Bugs
-- [ ] `launch_session.sh` needs Linux support
 - [ ] Attachment decryption may fail with very large files
 - [ ] CDP connection can timeout on slow networks
 - [ ] Database polling in `watch` mode may miss rapid messages
@@ -111,7 +112,7 @@ This document tracks planned features, improvements, and known issues.
 - [x] HTML quote styling was broken - improved CSS styling
 
 ### Limitations
-- [ ] No Windows support (paths differ)
+- [ ] No Windows support (paths differ) - macOS and Linux fully supported
 - [ ] CDP attachment sending not implemented
 - [ ] Database is read-only (writes not supported)
 - [ ] No multi-threading for concurrent operations
@@ -234,6 +235,15 @@ This document tracks planned features, improvements, and known issues.
 - [x] Added stats command to REPL mode
 - [x] Stats include: total messages, sent/received, attachments, busiest hours/days, averages
 
+### Linux Platform Support
+- [x] Platform detection in config.py (`~/.config/Session/`)
+- [x] Database access on Linux (SQLCipher)
+- [x] Attachment decryption on Linux (PyNaCl)
+- [x] CDP support on Linux (WebSocket)
+- [x] User config paths for Linux (`~/.config/session-cli/config.yaml`)
+- [x] Verified on Pop!_OS 22.04 LTS (Ubuntu-based)
+- [x] Session AppImage support documented
+
 ### Repository Setup
 - [x] Create README.md
 - [x] Add LICENSE (MIT)
@@ -265,7 +275,7 @@ Items to be prioritized later:
 
 These are features we'd love help with:
 
-1. **Windows Support**: Someone with Windows knowledge to implement platform-specific paths
+1. **Windows Support**: Someone with Windows knowledge to implement platform-specific paths (macOS and Linux already supported)
 2. **Test Suite**: Comprehensive test coverage for reliability
 3. **Documentation**: Better user guides and API documentation
 4. **Click CLI**: Migration from argparse to click for better UX
